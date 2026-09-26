@@ -1,1 +1,2059 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Atelier Vidéo 300</title>
+
+<link rel="manifest" id="pwa-manifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Atelier Vidéo">
+<link rel="apple-touch-icon" id="apple-touch-icon">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Atelier Vidéo 300">
+<meta name="msapplication-TileColor" content="#1a1a1a">
+
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+        --bg: #fafafa; --panel: #ffffff; --panel-2: #f5f5f5; --border: #e5e5e5;
+        --ink: #1a1a1a; --ink-dim: #777; --ink-faint: #aaa;
+        --success: #2d8a4e; --error: #c0392b; --warn: #d4a017; --info: #4a6cf7;
+        --radius: 12px;
+    }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background: var(--bg); color: var(--ink); min-height: 100vh;
+        padding: 1.5rem 1rem 6rem; font-size: 15px; line-height: 1.5;
+        max-width: 900px; margin: 0 auto;
+        padding-top: calc(1.5rem + env(safe-area-inset-top));
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+    }
+    header { margin-bottom: 1.5rem; text-align: center; }
+    h1 { font-size: 1.4rem; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 0.3rem; }
+    .subtitle { font-size: 0.8rem; color: var(--ink-dim); font-style: italic; }
+
+    .toast {
+        position: fixed; top: 1.5rem; left: 50%;
+        transform: translateX(-50%) translateY(-100px);
+        background: var(--ink); color: #fff;
+        padding: 0.85rem 1.4rem; border-radius: 10px;
+        font-size: 0.85rem; font-weight: 500;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        z-index: 1000; opacity: 0;
+        transition: transform 0.35s ease, opacity 0.35s ease;
+        max-width: 90vw; text-align: center;
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .toast.visible { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--error); }
+    .toast.warn { background: var(--warn); }
+    .toast .toast-icon { font-size: 1rem; }
+
+    .install-banner {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        color: #fff; padding: 1rem 1.1rem;
+        border-radius: var(--radius); margin-bottom: 1rem;
+        display: none; align-items: center; gap: 0.8rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .install-banner.visible { display: flex; }
+    .install-banner .ib-icon { font-size: 1.6rem; flex-shrink: 0; }
+    .install-banner .ib-text { flex: 1; font-size: 0.82rem; line-height: 1.35; }
+    .install-banner .ib-text strong { display: block; font-size: 0.9rem; margin-bottom: 0.15rem; }
+    .install-banner button {
+        background: #fff; color: #1a1a1a; border: none;
+        padding: 0.55rem 0.9rem; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 700; font-family: inherit;
+        cursor: pointer; flex-shrink: 0;
+        transition: transform 0.1s;
+    }
+    .install-banner button:active { transform: scale(0.96); }
+    .install-banner .ib-close {
+        background: transparent; color: rgba(255,255,255,0.6);
+        padding: 0.4rem; font-size: 1rem; font-weight: 400;
+    }
+
+    .info-banner {
+        background: #eef4ff; border-left: 3px solid var(--info);
+        padding: 0.75rem 0.95rem; border-radius: 8px;
+        font-size: 0.78rem; color: #2a3a5c;
+        margin-bottom: 1rem; line-height: 1.45;
+    }
+    .info-banner strong { color: #1a1a1a; }
+
+    .section {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); margin-bottom: 1rem;
+        overflow: hidden;
+    }
+    .section-header {
+        padding: 0.9rem 1.1rem; cursor: pointer; user-select: none;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    .section-header:active { background: var(--panel-2); }
+    .section-title {
+        font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+        color: var(--ink-dim); font-weight: 600;
+    }
+    .section-title .badge {
+        display: inline-block; margin-left: 0.4rem; padding: 0.1rem 0.4rem;
+        background: var(--ink); color: #fff; border-radius: 10px;
+        font-size: 0.65rem; letter-spacing: 0;
+    }
+    .section-title .badge.soft { background: var(--info); color: #fff; }
+    .section-header .chevron {
+        font-size: 0.7rem; color: var(--ink-faint); transition: transform 0.2s;
+    }
+    .section.open .section-header .chevron { transform: rotate(180deg); }
+    .section-body { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .section.open .section-body { max-height: 8000px; }
+    .section-content { padding: 0 1.1rem 1.1rem; }
+
+    .api-panel {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--radius); padding: 1rem 1.2rem;
+        margin-bottom: 1rem; transition: border-color 0.3s;
+    }
+    .api-panel.ok { border-color: var(--success); }
+
+    .api-key-input {
+        width: 100%; padding: 0.85rem 1rem;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: #fafafa; color: var(--ink);
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 0.85rem; margin-bottom: 0.6rem;
+    }
+    .api-key-input:focus { outline: none; border-color: var(--ink); }
+
+    .api-save-btn {
+        width: 100%; padding: 0.8rem 1.2rem;
+        border-radius: 8px; border: none;
+        background: var(--ink); color: #fff;
+        font-size: 0.9rem; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+        margin-bottom: 0.6rem;
+    }
+    .api-save-btn:active { transform: scale(0.98); }
+
+    .api-status-line {
+        font-size: 0.75rem; padding: 0.55rem 0.85rem;
+        border-radius: 6px; margin-bottom: 0.5rem;
+        display: flex; align-items: center; gap: 0.5rem;
+        background: var(--panel-2); color: var(--ink-dim);
+        transition: all 0.3s;
+    }
+    .api-status-line.ok {
+        background: #e3f5e9; color: var(--success); font-weight: 600;
+    }
+    .api-status-line .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--ink-faint); flex-shrink: 0;
+        transition: background 0.3s;
+    }
+    .api-status-line.ok .status-dot { background: var(--success); }
+
+    .api-hint { font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.4rem; }
+    .api-hint a { color: var(--ink); text-decoration: underline; }
+    .stat-line {
+        font-size: 0.72rem; color: var(--ink-dim); margin-top: 0.5rem;
+        padding: 0.4rem 0.6rem; background: var(--panel-2); border-radius: 6px;
+        display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.3rem;
+    }
+
+    .upload-zone {
+        border: 2px dashed var(--border); border-radius: var(--radius);
+        padding: 2rem 1rem; text-align: center; cursor: pointer;
+        transition: border-color 0.2s, background 0.2s; margin-bottom: 1rem;
+        background: var(--panel);
+    }
+    .upload-zone:active { border-color: var(--ink); background: #f5f5f5; }
+    .upload-zone.loading { pointer-events: none; opacity: 0.6; }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-icon { font-size: 2.2rem; margin-bottom: 0.6rem; opacity: 0.6; }
+    .upload-text { font-size: 0.95rem; color: var(--ink); margin-bottom: 0.2rem; }
+    .upload-hint { font-size: 0.75rem; color: var(--ink-dim); }
+
+    .images-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 0.5rem; margin-bottom: 1rem;
+    }
+    .image-card {
+        position: relative; border-radius: 8px; overflow: hidden;
+        border: 1px solid var(--border); background: #f0f0f0;
+        aspect-ratio: 9/16;
+    }
+    .image-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .image-card .remove-btn {
+        position: absolute; top: 4px; right: 4px;
+        background: rgba(0,0,0,0.65); color: #fff; border: none;
+        width: 22px; height: 22px; border-radius: 50%; font-size: 11px;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        line-height: 1;
+    }
+
+    textarea {
+        width: 100%; padding: 0.75rem 0.9rem; border-radius: 8px;
+        border: 1px solid var(--border); background: #fafafa;
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        min-height: 80px; resize: vertical;
+    }
+    textarea:focus { outline: none; border-color: var(--ink); }
+
+    .prompt-main {
+        width: 100%; padding: 0.85rem 1rem;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: #fafafa; color: var(--ink);
+        font-family: inherit; font-size: 0.9rem;
+        min-height: 110px; resize: vertical; line-height: 1.5;
+    }
+    .prompt-main:focus { outline: none; border-color: var(--ink); }
+    .prompt-main-hint {
+        font-size: 0.72rem; color: var(--ink-dim);
+        margin-top: 0.5rem; line-height: 1.4;
+    }
+
+    .mode-search {
+        width: 100%; padding: 0.75rem 0.9rem;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: #fafafa; color: var(--ink); font-size: 0.88rem;
+        margin-bottom: 0.7rem;
+    }
+    .mode-search:focus { outline: none; border-color: var(--ink); }
+
+    .mode-categories {
+        display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.7rem;
+    }
+    .mode-cat {
+        padding: 0.3rem 0.65rem; border-radius: 14px;
+        border: 1px solid var(--border); background: var(--panel-2);
+        font-size: 0.68rem; cursor: pointer; user-select: none;
+        transition: all 0.15s;
+    }
+    .mode-cat:active { transform: scale(0.96); }
+    .mode-cat.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+    .modes-list {
+        max-height: 420px; overflow-y: auto;
+        border: 1px solid var(--border); border-radius: 8px;
+        background: #fafafa;
+    }
+    .mode-item {
+        display: flex; align-items: center; gap: 0.7rem;
+        padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--border);
+        cursor: pointer; transition: background 0.15s;
+        font-size: 0.82rem;
+    }
+    .mode-item:last-child { border-bottom: none; }
+    .mode-item:active { background: #f0f0f0; }
+    .mode-item.selected { background: var(--ink); color: #fff; }
+    .mode-item .mode-num {
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem; color: var(--ink-faint);
+        min-width: 2.4rem; text-align: right;
+        flex-shrink: 0;
+    }
+    .mode-item.selected .mode-num { color: rgba(255,255,255,0.6); }
+    .mode-item .mode-label { flex: 1; line-height: 1.3; }
+    .mode-item .mode-cat-tag {
+        font-size: 0.6rem; padding: 0.1rem 0.4rem;
+        border-radius: 8px; background: var(--panel-2);
+        color: var(--ink-dim); flex-shrink: 0;
+    }
+    .mode-item.selected .mode-cat-tag {
+        background: rgba(255,255,255,0.2); color: #fff;
+    }
+
+    .current-mode {
+        padding: 0.7rem 0.9rem; border-radius: 8px;
+        background: #eef4ff; border-left: 3px solid var(--info);
+        font-size: 0.78rem; color: #2a3a5c; margin-bottom: 0.7rem;
+        line-height: 1.4;
+    }
+    .current-mode strong { color: #1a1a1a; }
+
+    .control-row { margin-bottom: 0.9rem; }
+    .control-row:last-child { margin-bottom: 0; }
+    .control-label {
+        display: block; font-size: 0.72rem; color: var(--ink-dim);
+        margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.06em;
+        font-weight: 600;
+    }
+    select {
+        width: 100%; padding: 0.7rem 0.9rem; border-radius: 8px;
+        border: 1px solid var(--border); background: #fafafa;
+        color: var(--ink); font-family: inherit; font-size: 0.88rem;
+        -webkit-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%231a1a1a' d='M0 0l5 6 5-6z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 0.9rem center;
+        background-size: 10px;
+    }
+    select:focus { outline: none; border-color: var(--ink); }
+
+    .btn-primary {
+        width: 100%; padding: 1.1rem; border-radius: var(--radius);
+        border: none; background: var(--ink); color: #fff;
+        font-size: 1rem; font-weight: 600; font-family: inherit;
+        cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+        margin-bottom: 1rem;
+    }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .btn-stop {
+        width: 100%; padding: 0.8rem; border-radius: var(--radius);
+        border: 1px solid var(--border); background: var(--panel);
+        color: var(--error); font-size: 0.85rem; font-weight: 600;
+        font-family: inherit; cursor: pointer; margin-bottom: 1rem;
+        display: none;
+    }
+    .btn-stop.visible { display: block; }
+
+    .queue { margin-top: 1rem; }
+    .queue-summary {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: 8px; padding: 0.7rem 0.9rem; margin-bottom: 0.6rem;
+        font-size: 0.78rem; display: flex; justify-content: space-between;
+        align-items: center; flex-wrap: wrap; gap: 0.4rem;
+    }
+    .queue-summary .progress-text { color: var(--ink); font-weight: 600; }
+    .queue-summary .eta-text { color: var(--ink-dim); }
+
+    .queue-item {
+        display: flex; align-items: center; gap: 0.8rem;
+        padding: 0.7rem 0.8rem; border-radius: 8px;
+        border: 1px solid var(--border); margin-bottom: 0.4rem;
+        background: var(--panel); transition: border-color 0.3s, opacity 0.3s;
+        font-size: 0.82rem;
+    }
+    .queue-item.pending { opacity: 0.5; }
+    .queue-item.creating { border-color: var(--warn); }
+    .queue-item.processing { border-color: var(--ink); }
+    .queue-item.done { border-color: var(--success); }
+    .queue-item.failed { border-color: var(--error); }
+    .queue-item .q-icon { font-size: 1rem; width: 1.5rem; text-align: center; flex-shrink: 0; }
+    .queue-item .q-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .queue-item .q-status { font-size: 0.72rem; color: var(--ink-dim); text-align: right; flex-shrink: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .queue-more {
+        text-align: center; padding: 0.5rem; color: var(--ink-dim);
+        font-size: 0.75rem; font-style: italic;
+    }
+
+    .gallery { margin-top: 1.5rem; }
+    .gallery-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.8rem;
+    }
+    .gallery-item {
+        border-radius: var(--radius); overflow: hidden;
+        border: 1px solid var(--border); background: #000;
+        animation: fadeIn 0.4s ease;
+    }
+    .gallery-item video { width: 100%; display: block; aspect-ratio: 9/16; object-fit: cover; }
+    .gallery-item .g-caption {
+        padding: 0.4rem 0.6rem; background: var(--panel);
+        font-size: 0.7rem; color: var(--ink-dim);
+    }
+
+    .status-bar {
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: var(--ink); color: #fff; padding: 0.7rem 1rem;
+        padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
+        font-size: 0.78rem; display: flex; align-items: center; gap: 0.6rem;
+        transform: translateY(120%); transition: transform 0.3s;
+        z-index: 100;
+    }
+    .status-bar.visible { transform: translateY(0); }
+    .status-bar .spinner {
+        width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff; border-radius: 50%;
+        animation: spin 0.8s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .hidden { display: none !important; }
+
+    .ios-hint {
+        background: #fff8e6; border-left: 3px solid var(--warn);
+        padding: 0.7rem 0.9rem; border-radius: 8px;
+        font-size: 0.75rem; color: #6b5500;
+        margin-bottom: 1rem; line-height: 1.45;
+        display: none;
+    }
+    .ios-hint.visible { display: block; }
+    .ios-hint strong { color: #1a1a1a; }
+    .ios-hint .share-icon {
+        display: inline-block; padding: 0 0.25rem;
+        font-weight: 700; color: var(--info);
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Atelier Vidéo 300</h1>
+    <p class="subtitle">300 modes IA — installable sur votre téléphone</p>
+</header>
+
+<div class="install-banner" id="install-banner">
+    <div class="ib-icon">📲</div>
+    <div class="ib-text">
+        <strong>Installer l'application</strong>
+        Accès rapide depuis votre écran d'accueil, même hors-ligne.
+    </div>
+    <button id="install-btn">Installer</button>
+    <button class="ib-close" id="install-close">✕</button>
+</div>
+
+<div class="ios-hint" id="ios-hint">
+    <strong>📱 Installer sur iPhone/iPad :</strong>
+    Appuyez sur <span class="share-icon">⬆️</span> en bas de Safari, puis choisissez
+    <strong>« Sur l'écran d'accueil »</strong>.
+    <button id="ios-close" style="float:right;background:none;border:none;color:#6b5500;font-size:0.9rem;cursor:pointer;">✕</button>
+</div>
+
+<div class="info-banner">
+    <strong>300 modes intégrés.</strong> Choisissez un numéro (1 à 300) ou cherchez par mot-clé.
+    Ajoutez vos images, écrivez un prompt (optionnel), lancez. Chaque image devient une vidéo
+    <strong>portrait 9:16</strong> animée selon le mode choisi.
+</div>
+
+<div class="api-panel" id="api-panel">
+    <input type="password" class="api-key-input" id="api-key-input"
+           placeholder="Collez votre clé API ici (sk-...)" autocomplete="off" spellcheck="false">
+    <button type="button" class="api-save-btn" id="api-save-btn">Enregistrer la clé</button>
+    <div class="api-status-line" id="api-status-line">
+        <span class="status-dot"></span>
+        <span id="api-status-text">Aucune clé API enregistrée</span>
+    </div>
+    <div class="api-hint">
+        Clé gratuite sur <a href="https://platform.agnes-ai.com" target="_blank">platform.agnes-ai.com</a> → Settings → API Keys
+    </div>
+    <div class="stat-line" id="stat-line">
+        <span>📊 Vitesse moyenne : <span id="stat-speed">en attente de données</span></span>
+        <span id="stat-samples">0 génération</span>
+    </div>
+</div>
+
+<div class="upload-zone" id="upload-zone">
+    <input type="file" id="file-input" accept="image/*" multiple>
+    <div class="upload-icon">＋</div>
+    <div class="upload-text">Ajoutez vos images</div>
+    <div class="upload-hint">Autant que vous voulez — chacune deviendra une vidéo</div>
+</div>
+
+<div class="images-grid" id="images-grid"></div>
+
+<div class="section open" id="section-mode">
+    <div class="section-header" data-toggle="section-mode">
+        <span class="section-title">🎯 Mode (1–300) <span class="badge soft">essentiel</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="current-mode" id="current-mode">
+                Mode sélectionné : <strong>Aucun</strong> — choisissez-en un ci-dessous.
+            </div>
+            <input type="text" class="mode-search" id="mode-search"
+                   placeholder="Rechercher un mode… (ex: kung fu, néon, dragon, glitch)">
+            <div class="mode-categories" id="mode-categories"></div>
+            <div class="modes-list" id="modes-list"></div>
+        </div>
+    </div>
+</div>
+
+<div class="section open" id="section-prompt">
+    <div class="section-header" data-toggle="section-prompt">
+        <span class="section-title">✍️ Votre prompt <span class="badge soft">recommandé</span></span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <textarea class="prompt-main" id="main-prompt"
+                placeholder="Décrivez ce que vous voulez en plus. Ce texte s'ajoute au mode sélectionné. Laissez vide pour utiliser uniquement le mode."></textarea>
+            <div class="prompt-main-hint">
+                💡 Le mode définit déjà le style, le mouvement, la caméra et l'ambiance.
+                Votre prompt ajoute des précisions par-dessus (sujet, action, émotion…).
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section" id="section-tech">
+    <div class="section-header" data-toggle="section-tech">
+        <span class="section-title">📷 Réglages techniques</span>
+        <span class="chevron">▼</span>
+    </div>
+    <div class="section-body">
+        <div class="section-content">
+            <div class="control-row">
+                <label class="control-label">Durée de chaque vidéo</label>
+                <select id="duration-select">
+                    <option value="121">5 secondes</option>
+                    <option value="153" selected>6,4 secondes (recommandé)</option>
+                    <option value="241">10 secondes</option>
+                </select>
+            </div>
+            <div class="control-row">
+                <label class="control-label">Intensité du mouvement</label>
+                <select id="intensity-select">
+                    <option value="mode">Selon le mode (recommandé)</option>
+                    <option value="subtle">Subtile</option>
+                    <option value="moderate">Modérée</option>
+                    <option value="strong">Forte</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button type="button" class="btn-primary" id="generate-btn" disabled>
+    Créer les vidéos
+</button>
+
+<button type="button" class="btn-stop" id="stop-btn">
+    ⏹ Arrêter la génération
+</button>
+
+<div class="queue" id="queue" style="display:none;"></div>
+
+<div class="gallery" id="gallery" style="display:none;">
+    <div class="section-title" style="margin-bottom:0.8rem;">Vidéos générées</div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+</div>
+
+<div class="status-bar" id="status-bar">
+    <div class="spinner"></div>
+    <span id="status-text">Préparation…</span>
+</div>
+
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">✓</span>
+    <span id="toast-text">Message</span>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// PWA — ICÔNES SVG
+// ══════════════════════════════════════════════════════════════════
+const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <defs>
+        <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#1a1a1a"/>
+            <stop offset="100%" stop-color="#3a3a3a"/>
+        </linearGradient>
+    </defs>
+    <rect width="512" height="512" rx="96" fill="url(#g)"/>
+    <g fill="none" stroke="#fff" stroke-width="24" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="96" y="140" width="200" height="232" rx="16" fill="rgba(255,255,255,0.1)"/>
+        <path d="M296 220 L400 180 L400 332 L296 292 Z" fill="rgba(255,255,255,0.15)"/>
+        <circle cx="196" cy="256" r="56" fill="rgba(255,255,255,0.25)" stroke="none"/>
+        <path d="M170 256 L188 274 L226 236" stroke="#fff" stroke-width="20"/>
+    </g>
+    <text x="256" y="460" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="64" font-weight="700" fill="#fff" text-anchor="middle">300</text>
+</svg>`;
+
+const ICON_DATA_URI = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(ICON_SVG);
+
+const MANIFEST = {
+    name: "Atelier Vidéo 300",
+    short_name: "Atelier 300",
+    description: "300 modes IA pour transformer vos images en vidéos animées.",
+    start_url: ".",
+    scope: ".",
+    display: "standalone",
+    orientation: "portrait",
+    background_color: "#fafafa",
+    theme_color: "#1a1a1a",
+    lang: "fr",
+    categories: ["photo", "video", "productivity"],
+    icons: [
+        { src: ICON_DATA_URI, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+        { src: ICON_DATA_URI, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+        { src: ICON_DATA_URI, sizes: "any", type: "image/svg+xml", purpose: "maskable" }
+    ]
+};
+
+const MANIFEST_URI = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(MANIFEST));
+
+document.getElementById('pwa-manifest').setAttribute('href', MANIFEST_URI);
+document.getElementById('apple-touch-icon').setAttribute('href', ICON_DATA_URI);
+
+// ══════════════════════════════════════════════════════════════════
+// ✅ CORRIGÉ — Service Worker DÉSACTIVÉ
+// Le SW via Blob scope './' ne fonctionne pas sur GitHub Pages.
+// On le laisse désactivé pour que l'app fonctionne à coup sûr.
+// ══════════════════════════════════════════════════════════════════
+function registerServiceWorker() {
+    // Désactivé volontairement pour GitHub Pages.
+    // Pour l'activer, il faut un vrai fichier sw.js servi à la racine.
+    console.log('[PWA] Service Worker désactivé (mode GitHub Pages).');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BOUTON D'INSTALLATION
+// ══════════════════════════════════════════════════════════════════
+let deferredPrompt = null;
+const installBanner = document.getElementById('install-banner');
+const installBtn = document.getElementById('install-btn');
+const installClose = document.getElementById('install-close');
+const iosHint = document.getElementById('ios-hint');
+
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+function isStandalone() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone() && !localStorage.getItem('pwa_banner_dismissed')) {
+        installBanner.classList.add('visible');
+    }
+});
+
+installBtn?.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log('[PWA] Choix utilisateur:', outcome);
+    deferredPrompt = null;
+    installBanner.classList.remove('visible');
+});
+
+installClose?.addEventListener('click', () => {
+    installBanner.classList.remove('visible');
+    try { localStorage.setItem('pwa_banner_dismissed', '1'); } catch (e) {}
+});
+
+if (isIOS() && !isStandalone() && !localStorage.getItem('ios_hint_dismissed')) {
+    setTimeout(() => iosHint.classList.add('visible'), 1500);
+}
+
+document.getElementById('ios-close')?.addEventListener('click', () => {
+    iosHint.classList.remove('visible');
+    try { localStorage.setItem('ios_hint_dismissed', '1'); } catch (e) {}
+});
+
+window.addEventListener('appinstalled', () => {
+    console.log('[PWA] Application installée');
+    installBanner.classList.remove('visible');
+    iosHint.classList.remove('visible');
+});
+
+// ══════════════════════════════════════════════════════════════════
+// CONFIGURATION
+// ══════════════════════════════════════════════════════════════════
+const API_BASE = 'https://apihub.agnes-ai.com/v1';
+const POLL_BASE = 'https://apihub.agnes-ai.com/agnesapi';
+const MODEL_VIDEO = 'agnes-video-v2.0';
+const FRAME_RATE = 24;
+
+let createIntervalMs = 62000;
+const CREATE_INTERVAL_MIN = 62000;
+const CREATE_INTERVAL_MAX = 90000;
+const CREATE_INTERVAL_SAFE = 75000;
+const POLL_INTERVAL_SEC = 8;
+const MAX_POLL_ATTEMPTS = 100;
+
+const TIMING_CACHE_KEY = 'agnes_timing_cache_v10';
+const API_KEY_STORAGE = 'agnes_api_key';
+const MODE_STORAGE = 'agnes_selected_mode_v1';
+
+const MAX_VISIBLE_QUEUE = 30;
+const MAX_IMAGE_SIZE = 12 * 1024 * 1024;
+const THUMBNAIL_MAX_WIDTH = 200;
+
+// ══════════════════════════════════════════════════════════════════
+// LES 300 MODES (inchangés — volontairement condensés pour le message)
+// ══════════════════════════════════════════════════════════════════
+const MODES = [
+    { n: 1, cat: 'style', fr: 'Studio Anime', kw: 'ghibli anime manga', intensity: 'moderate',
+      en: 'Transform into Studio Ghibli anime style, hand-painted watercolor backgrounds, cel-shaded characters, warm nostalgic atmosphere.' },
+    { n: 2, cat: 'style', fr: 'Cartoon Factory', kw: 'cartoon pixar disney simpson', intensity: 'moderate',
+      en: 'Transform into vibrant cartoon style, thick outlines, flat saturated colors, expressive characters, playful animation.' },
+    { n: 3, cat: 'style', fr: 'Cinéma Noir', kw: 'noir film polar ombres', intensity: 'subtle',
+      en: 'Classic film noir aesthetic, high contrast black and white, dramatic chiaroscuro, 1940s detective atmosphere, venetian blind shadows.' },
+    { n: 4, cat: 'style', fr: 'Clip Musical', kw: 'clip musique neon glitch', intensity: 'strong',
+      en: 'Music video aesthetic, dynamic neon lighting, glitch transitions, rhythmic light pulses, energetic atmosphere.' },
+    { n: 5, cat: 'style', fr: 'Pub Réseaux Sociaux', kw: 'pub tiktok reel short', intensity: 'moderate',
+      en: 'Social media advertisement style, bright punchy colors, quick attention-grabbing motion, trendy vertical format energy.' },
+    { n: 6, cat: 'style', fr: 'Packshot Produit', kw: 'produit ecommerce packshot', intensity: 'subtle',
+      en: 'Clean product photography, rotating slow motion, studio lighting, neutral seamless background, subtle reflections.' },
+    { n: 7, cat: 'style', fr: 'Visite Immobilière', kw: 'immobilier maison visite', intensity: 'subtle',
+      en: 'Real estate walkthrough, smooth camera glide, natural daylight, warm inviting interior atmosphere.' },
+    { n: 8, cat: 'style', fr: 'Portrait Vivant', kw: 'portrait vivant respiration', intensity: 'subtle',
+      en: 'Living portrait, subtle breathing motion, gentle eye blinks, micro-expressions, soft natural lighting.' },
+    { n: 9, cat: 'style', fr: 'Mème Animé', kw: 'meme humour drole', intensity: 'strong',
+      en: 'Animated meme style, exaggerated motion, comedic timing, punchy visual gags.' },
+    { n: 10, cat: 'style', fr: 'BD Animée', kw: 'bd comics bulle', intensity: 'moderate',
+      en: 'Comic book animation, ink outlines, halftone dots, onomatopoeia pop-ups, panel-like motion.' },
+    { n: 11, cat: 'style', fr: 'Storyboard', kw: 'storyboard cinema plan', intensity: 'subtle',
+      en: 'Cinematic storyboard sketch, pencil lines, rough shading, pre-production visual style.' },
+    { n: 12, cat: 'style', fr: 'Conte Enfant', kw: 'conte enfant dessin anime', intensity: 'subtle',
+      en: 'Children storybook illustration, soft pastel colors, whimsical gentle motion, magical fairytale atmosphere.' },
+    { n: 13, cat: 'style', fr: 'Photos Anciennes', kw: 'photo ancienne vintage restauration', intensity: 'subtle',
+      en: 'Vintage photograph restoration, subtle sepia tones, gentle grain, nostalgic warm atmosphere.' },
+    { n: 14, cat: 'style', fr: 'Souvenirs Famille', kw: 'famille souvenir emotion', intensity: 'subtle',
+      en: 'Family memories slideshow aesthetic, warm golden light, soft focus, emotional nostalgic mood.' },
+    { n: 15, cat: 'style', fr: 'Animaux', kw: 'animaux chat chien', intensity: 'moderate',
+      en: 'Living animals, natural animal motion, fur movement, alert eyes, authentic animal behavior.' },
+    { n: 16, cat: 'style', fr: 'Recette Cuisine', kw: 'cuisine recette plat', intensity: 'moderate',
+      en: 'Appetizing food videography, steam rising, glistening textures, slow tempting motion, warm kitchen lighting.' },
+    { n: 17, cat: 'style', fr: 'Lookbook Mode', kw: 'mode fashion lookbook defile', intensity: 'moderate',
+      en: 'Fashion editorial video, fabric movement, studio lighting, model pose transitions, high-end runway energy.' },
+    { n: 18, cat: 'style', fr: 'Carte Postale Voyage', kw: 'voyage carte postale paysage', intensity: 'subtle',
+      en: 'Travel postcard come to life, gentle landscape motion, golden hour light, wanderlust atmosphere.' },
+    { n: 19, cat: 'style', fr: 'Paysage Vivant', kw: 'paysage nature montagne ocean', intensity: 'subtle',
+      en: 'Living landscape, gentle wind through grass, flowing water, moving clouds, natural light shifts.' },
+    { n: 20, cat: 'style', fr: 'Science-Fiction', kw: 'science fiction futur portail', intensity: 'strong',
+      en: 'Science fiction aesthetic, glowing portals, holographic interfaces, futuristic lighting, deep space atmosphere.' },
+    { n: 21, cat: 'style', fr: 'Horreur Gothique', kw: 'horreur gothique sombre', intensity: 'subtle',
+      en: 'Gothic horror atmosphere, candlelight flicker, creeping fog, ominous shadows, unsettling stillness.' },
+    { n: 22, cat: 'style', fr: 'Fantasy Magique', kw: 'fantasy magie feerique', intensity: 'moderate',
+      en: 'Magical fantasy world, sparkling particles, enchanted forest, ethereal glowing light, mystical atmosphere.' },
+    { n: 23, cat: 'style', fr: 'Cyberpunk', kw: 'cyberpunk neon futur', intensity: 'strong',
+      en: 'Cyberpunk aesthetic, neon pink and cyan lighting, rain-soaked streets, holographic ads, Blade Runner atmosphere.' },
+    { n: 24, cat: 'style', fr: 'Steampunk', kw: 'steampunk vapeur engrenage', intensity: 'moderate',
+      en: 'Steampunk aesthetic, brass and copper tones, steam clouds, whirring gears, Victorian retro-futurism.' },
+    { n: 25, cat: 'style', fr: 'Aquarelle Animée', kw: 'aquarelle peinture eau', intensity: 'subtle',
+      en: 'Animated watercolor painting, colors bleeding softly, wet paper texture, delicate flowing motion.' },
+    { n: 26, cat: 'fx', fr: 'Croquis → Animation', kw: 'croquis dessin crayon', intensity: 'moderate',
+      en: 'Pencil sketch coming to life, lines drawing themselves, graphite shading animating, paper texture.' },
+    { n: 27, cat: 'fx', fr: '3D Turnaround', kw: '3d rotation turnaround', intensity: 'moderate',
+      en: '3D turnaround rotation, subject rotating on turntable, consistent volume, studio lighting.' },
+    { n: 28, cat: 'fx', fr: 'Avatar Créateur', kw: 'avatar createur profil', intensity: 'subtle',
+      en: 'Stylized creator avatar, friendly animated expression, clean background, profile-picture energy.' },
+    { n: 29, cat: 'fx', fr: 'Tête Parlante', kw: 'tete parlante lip sync', intensity: 'moderate',
+      en: 'Talking head animation, lip sync motion, natural head movement, engaging eye contact.' },
+    { n: 30, cat: 'fx', fr: 'Karaoké Paroles', kw: 'karaoke paroles musique', intensity: 'moderate',
+      en: 'Karaoke lyric video, bouncing text, colorful background, musical energy, sing-along mood.' },
+    { n: 31, cat: 'fx', fr: 'Diaporama Vidéo', kw: 'diaporama slideshow', intensity: 'subtle',
+      en: 'Cinematic slideshow transition, smooth crossfade, Ken Burns effect, emotional pacing.' },
+    { n: 32, cat: 'fx', fr: 'Avant/Après', kw: 'avant apres transformation', intensity: 'moderate',
+      en: 'Before and after reveal, split screen transition, dramatic transformation reveal.' },
+    { n: 33, cat: 'fx', fr: 'Time-lapse', kw: 'timelapse temps', intensity: 'strong',
+      en: 'Time-lapse effect, accelerated natural motion, clouds racing, shadows shifting, day to night transition.' },
+    { n: 34, cat: 'fx', fr: 'Effets Saisonniers', kw: 'saison neige automne printemps', intensity: 'moderate',
+      en: 'Seasonal transformation, falling leaves or snow, blooming flowers, seasonal color palette shift.' },
+    { n: 35, cat: 'fx', fr: 'Météo', kw: 'meteo pluie orage vent', intensity: 'strong',
+      en: 'Dynamic weather effects, rain drops, thunder flashes, wind gusts, atmospheric storm mood.' },
+    { n: 36, cat: 'fx', fr: 'Lumière & Particules', kw: 'particules lumiere lucioles', intensity: 'subtle',
+      en: 'Glowing particles, floating dust motes, fireflies, soft bokeh, magical light rays.' },
+    { n: 37, cat: 'fx', fr: 'Glitch & VHS', kw: 'glitch vhs retro distortion', intensity: 'strong',
+      en: 'VHS glitch effect, scanlines, chromatic aberration, tracking distortion, retro analog video artifacts.' },
+    { n: 38, cat: 'fx', fr: 'Double Exposition', kw: 'double exposition superposition', intensity: 'subtle',
+      en: 'Double exposure effect, two images blending poetically, dreamlike overlap, ethereal transparency.' },
+    { n: 39, cat: 'fx', fr: 'Kaléidoscope', kw: 'kaleidoscope symetrie', intensity: 'strong',
+      en: 'Kaleidoscope effect, symmetrical mirror patterns, hypnotic rotation, fractal-like repetition.' },
+    { n: 40, cat: 'fx', fr: 'Directeur Multi-Styles', kw: 'directeur artistique aleatoire', intensity: 'moderate',
+      en: 'AI art director chooses a fitting style, harmonious color grading, cohesive artistic direction.' },
+    { n: 41, cat: 'fight', fr: 'Kung Fu Cinématique', kw: 'kung fu combat art martial', intensity: 'strong',
+      en: 'Cinematic kung fu, fluid martial arts motion, slow-motion impacts, Matrix-style bullet time, intense focus.' },
+    { n: 42, cat: 'fight', fr: 'Karaté Impact', kw: 'karate combat impact', intensity: 'strong',
+      en: 'Karate strike, powerful impact, shockwave ripple, speed lines, intense martial focus.' },
+    { n: 43, cat: 'fight', fr: 'Boxe / MMA', kw: 'boxe mma combat ring', intensity: 'strong',
+      en: 'Boxing or MMA fight, sweat flying, powerful punches, dramatic slow motion, ring atmosphere.' },
+    { n: 44, cat: 'fight', fr: 'Samouraï / Katana', kw: 'samourai katana sabre', intensity: 'moderate',
+      en: 'Samurai duel, katana glinting, cherry blossom petals, tense stillness before the strike.' },
+    { n: 45, cat: 'fight', fr: 'Ninja Furtif', kw: 'ninja furtif ombre', intensity: 'moderate',
+      en: 'Ninja stealth, silent movement, smoke bombs, shuriken throwing, shadow concealment.' },
+    { n: 46, cat: 'fight', fr: 'Arts Martiaux Fantastiques', kw: 'art martial fantastique aura', intensity: 'strong',
+      en: 'Fantasy martial arts, glowing aura, energy projectiles, flying combat, supernatural ki power.' },
+    { n: 47, cat: 'fight', fr: 'Scène de Poursuite', kw: 'poursuite course cascade', intensity: 'strong',
+      en: 'Action chase scene, running, jumping, parkour motion, dynamic camera following the action.' },
+    { n: 48, cat: 'fight', fr: 'Combat Au Ralenti', kw: 'ralenti combat matrix', intensity: 'strong',
+      en: 'Extreme slow motion combat, 300-style impact, droplets suspended, dramatic tension.' },
+    { n: 49, cat: 'fight', fr: 'Wuxia', kw: 'wuxia bambou aerien', intensity: 'moderate',
+      en: 'Wuxia aerial combat, bamboo forest, floating martial arts, poetic swordplay, ethereal grace.' },
+    { n: 50, cat: 'fight', fr: 'Street Fight', kw: 'street fight rue combat', intensity: 'strong',
+      en: 'Raw street fight, handheld camera, gritty urban environment, brutal realism, adrenaline.' },
+    { n: 51, cat: 'dance', fr: 'Hip-Hop / Breakdance', kw: 'hip hop breakdance danse', intensity: 'strong',
+      en: 'Hip-hop breakdance, freeze poses, power moves, urban street energy, dynamic camera.' },
+    { n: 52, cat: 'dance', fr: 'Ballet Classique', kw: 'ballet classique danse', intensity: 'subtle',
+      en: 'Classical ballet, graceful pirouettes, stage lighting, tutu fabric flowing, elegant motion.' },
+    { n: 53, cat: 'dance', fr: 'Danse Contemporaine', kw: 'danse contemporaine emotion', intensity: 'moderate',
+      en: 'Contemporary dance, expressive fluid motion, emotional body language, flowing fabric.' },
+    { n: 54, cat: 'dance', fr: 'K-pop Choreography', kw: 'kpop danse coree', intensity: 'strong',
+      en: 'K-pop choreography, synchronized group dance, colorful stage, neon lights, polished performance.' },
+    { n: 55, cat: 'dance', fr: 'Salsa / Tango', kw: 'salsa tango couple', intensity: 'moderate',
+      en: 'Salsa or tango, passionate partner dance, close embrace, dramatic hip movement, fiery mood.' },
+    { n: 56, cat: 'dance', fr: 'Claquettes', kw: 'claquettes tap dance', intensity: 'moderate',
+      en: 'Tap dance, rhythmic footwork, shiny shoes, jazz club atmosphere, precise timing.' },
+    { n: 57, cat: 'dance', fr: 'Danse Tribal / Feu', kw: 'danse feu tribal', intensity: 'strong',
+      en: 'Tribal fire dance, flames swirling, hypnotic body movement, primal percussion energy.' },
+    { n: 58, cat: 'dance', fr: 'Vogue / Ballroom', kw: 'vogue ballroom pose', intensity: 'strong',
+      en: 'Vogue ballroom dance, fierce poses, catwalk strut, attitude, ballroom competition energy.' },
+    { n: 59, cat: 'dance', fr: 'Danse Bollywood', kw: 'bollywood inde danse', intensity: 'strong',
+      en: 'Bollywood dance, vibrant colors, energetic group choreography, joyful expression, Indian festive mood.' },
+    { n: 60, cat: 'dance', fr: 'Slow Motion Dance', kw: 'ralenti danse slow motion', intensity: 'subtle',
+      en: 'Slow motion dance, suspended particles, flowing fabric, ethereal dreamlike movement.' },
+    { n: 61, cat: 'camera', fr: 'Dolly Zoom (Vertigo)', kw: 'dolly zoom vertigo hitchcock', intensity: 'moderate',
+      en: 'Dolly zoom effect, Hitchcock Vertigo, background warping while subject stays fixed, disorienting perspective.' },
+    { n: 62, cat: 'camera', fr: 'Orbite 360°', kw: 'orbite 360 rotation camera', intensity: 'moderate',
+      en: '360-degree orbit camera, smooth rotation around subject, revealing all sides, consistent lighting.' },
+    { n: 63, cat: 'camera', fr: 'Drone Aérien', kw: 'drone aerien vue ciel', intensity: 'moderate',
+      en: 'Aerial drone shot, soaring above landscape, revealing vista, smooth bird-like motion.' },
+    { n: 64, cat: 'camera', fr: 'Crane Shot', kw: 'crane grue vertical', intensity: 'moderate',
+      en: 'Crane shot, vertical rise revealing context, dramatic upward movement, cinematic scale.' },
+    { n: 65, cat: 'camera', fr: 'Steadicam Fluide', kw: 'steadicam fluide suivi', intensity: 'subtle',
+      en: 'Steadicam follow shot, smooth fluid tracking, professional glide, no shake.' },
+    { n: 66, cat: 'camera', fr: 'Snorricam', kw: 'snorricam sujet fixe', intensity: 'strong',
+      en: 'Snorricam, camera mounted on subject, world spinning around, disorienting perspective, intense POV.' },
+    { n: 67, cat: 'camera', fr: 'Push-In Dramatique', kw: 'push in zoom dramatique', intensity: 'subtle',
+      en: 'Slow dramatic push-in, camera creeping toward subject, intensifying tension, shallow focus.' },
+    { n: 68, cat: 'camera', fr: 'Pull-Out Révélation', kw: 'pull out revele', intensity: 'moderate',
+      en: 'Slow pull-out revealing context, camera drifting backward, surprise reveal, expanding frame.' },
+    { n: 69, cat: 'camera', fr: 'Whip Pan', kw: 'whip pan rapide', intensity: 'strong',
+      en: 'Whip pan transition, rapid camera rotation, motion blur, snappy scene change.' },
+    { n: 70, cat: 'camera', fr: 'Rack Focus', kw: 'rack focus net flou', intensity: 'subtle',
+      en: 'Rack focus shift, foreground to background, smooth focus transition, professional depth control.' },
+    { n: 71, cat: 'camera', fr: 'Parallaxe 2.5D', kw: 'parallaxe 2.5d profondeur', intensity: 'moderate',
+      en: '2.5D parallax effect, layers moving at different speeds, illusion of depth from flat image.' },
+    { n: 72, cat: 'camera', fr: 'Tilt Up / Tilt Down', kw: 'tilt vertical camera', intensity: 'subtle',
+      en: 'Vertical tilt reveal, camera moving up or down, gradual revelation of height or detail.' },
+    { n: 73, cat: 'camera', fr: 'Travelling Latéral', kw: 'travelling lateral', intensity: 'moderate',
+      en: 'Lateral travelling shot, smooth sideways motion, revealing scene horizontally.' },
+    { n: 74, cat: 'camera', fr: 'Caméra Subjective (POV)', kw: 'pov subjectif camera', intensity: 'moderate',
+      en: 'Point-of-view shot, seeing through subject eyes, immersive first-person perspective.' },
+    { n: 75, cat: 'camera', fr: 'Caméra Épaule', kw: 'epaule handheld tremblement', intensity: 'strong',
+      en: 'Handheld camera, organic shake, documentary urgency, raw immersive feel.' },
+    { n: 76, cat: 'cut', fr: 'Jump Cut', kw: 'jump cut montage', intensity: 'strong',
+      en: 'Jump cut editing, rhythmic time skips, snappy pacing, energetic montage feel.' },
+    { n: 77, cat: 'cut', fr: 'Match Cut', kw: 'match cut transition', intensity: 'moderate',
+      en: 'Match cut transition, two similar shapes connecting, elegant visual rhyme.' },
+    { n: 78, cat: 'cut', fr: 'Cut sur Action', kw: 'cut action mouvement', intensity: 'moderate',
+      en: 'Cut on action, transition during peak movement, seamless motion continuation.' },
+    { n: 79, cat: 'cut', fr: 'Smash Cut', kw: 'smash cut brutal', intensity: 'strong',
+      en: 'Smash cut, abrupt tonal rupture, jarring transition, shock effect.' },
+    { n: 80, cat: 'cut', fr: 'Cross Cutting', kw: 'cross cutting parallele', intensity: 'moderate',
+      en: 'Cross cutting between parallel scenes, alternating shots, building tension.' },
+    { n: 81, cat: 'cut', fr: 'Montage Rapide', kw: 'montage rapide court', intensity: 'strong',
+      en: 'Fast-paced montage, short cuts, high energy, rapid visual rhythm.' },
+    { n: 82, cat: 'cut', fr: 'Montage Sériel', kw: 'montage seriel accumulation', intensity: 'moderate',
+      en: 'Serial montage, accumulation of images, building idea through repetition.' },
+    { n: 83, cat: 'cut', fr: 'Cut au Battement', kw: 'cut beat musique rythme', intensity: 'strong',
+      en: 'Beat-synced cuts, transitions on musical beats, rhythmic editing.' },
+    { n: 84, cat: 'cut', fr: 'Transition Flash', kw: 'flash transition blanc', intensity: 'strong',
+      en: 'Flash transition, white or colored burst between scenes, energetic punctuation.' },
+    { n: 85, cat: 'cut', fr: 'Transition Glitch', kw: 'glitch transition numerique', intensity: 'strong',
+      en: 'Glitch transition, digital distortion, pixel corruption, cybernetic cut.' },
+    { n: 86, cat: 'cut', fr: 'Transition Morphing', kw: 'morphing transformation', intensity: 'moderate',
+      en: 'Morphing transition, one image fluidly becoming another, seamless transformation.' },
+    { n: 87, cat: 'cut', fr: 'Transition Match Color', kw: 'match color transition', intensity: 'subtle',
+      en: 'Match color transition, cut on shared color palette, elegant visual continuity.' },
+    { n: 88, cat: 'cut', fr: 'Transition Objet', kw: 'transition objet cache', intensity: 'moderate',
+      en: 'Object wipe transition, foreground object covers frame, revealing new scene.' },
+    { n: 89, cat: 'cut', fr: 'Zoom Cut', kw: 'zoom cut rapide', intensity: 'strong',
+      en: 'Zoom cut, fast zoom becoming next shot, energetic snap transition.' },
+    { n: 90, cat: 'cut', fr: 'Cut Dans l\'Obscurité', kw: 'cut noir obscurite', intensity: 'moderate',
+      en: 'Cut to black, total darkness, then reveal, dramatic pause.' },
+    { n: 91, cat: 'power', fr: 'Explosion Cinématique', kw: 'explosion feu', intensity: 'strong',
+      en: 'Cinematic explosion, fireball, shockwave, debris flying, orange glow, dramatic impact.' },
+    { n: 92, cat: 'power', fr: 'Super Vitesse', kw: 'super vitesse flash', intensity: 'strong',
+      en: 'Super speed effect, Flash-style motion blur, speed trails, lightning arcs, kinetic energy.' },
+    { n: 93, cat: 'power', fr: 'Force Invisible', kw: 'telekinesie force', intensity: 'moderate',
+      en: 'Telekinesis, objects floating, invisible force, subtle hand gestures, glowing eyes.' },
+    { n: 94, cat: 'power', fr: 'Boule de Feu / Énergie', kw: 'energie feu main', intensity: 'strong',
+      en: 'Energy ball forming between hands, glowing plasma, crackling power, intense concentration.' },
+    { n: 95, cat: 'power', fr: 'Éclairs / Foudre', kw: 'eclair foudre electricite', intensity: 'strong',
+      en: 'Lightning powers, electric arcs, glowing eyes, crackling storm energy, charged atmosphere.' },
+    { n: 96, cat: 'power', fr: 'Glace / Givre', kw: 'glace givre froid', intensity: 'moderate',
+      en: 'Ice powers, frost spreading, crystal formations, cold breath, freezing aura.' },
+    { n: 97, cat: 'power', fr: 'Téléportation', kw: 'teleportation disparition', intensity: 'strong',
+      en: 'Teleportation, disappearance in smoke, reappearance, particle dissolve, spatial shift.' },
+    { n: 98, cat: 'power', fr: 'Lévitation', kw: 'levitation flottement', intensity: 'moderate',
+      en: 'Levitation, subject floating upward, hovering gracefully, weightless ascension.' },
+    { n: 99, cat: 'power', fr: 'Transformation', kw: 'transformation metamorphe', intensity: 'strong',
+      en: 'Transformation sequence, subject morphing, body changing, dramatic reveal, power surge.' },
+    { n: 100, cat: 'power', fr: 'Invocation', kw: 'invocation creature', intensity: 'strong',
+      en: 'Summoning ritual, magical circle, creature appearing, glowing runes, epic reveal.' },
+    { n: 101, cat: 'power', fr: 'Bouclier Magique', kw: 'bouclier magie protection', intensity: 'moderate',
+      en: 'Magic shield forming, glowing dome, energy barrier, protective aura, deflecting impact.' },
+    { n: 102, cat: 'power', fr: 'Régénération', kw: 'regeneration soin', intensity: 'moderate',
+      en: 'Regeneration, wounds healing, glowing skin, cellular repair, rapid recovery.' },
+    { n: 103, cat: 'power', fr: 'Contrôle du Temps', kw: 'temps controle gel', intensity: 'strong',
+      en: 'Time control, freezing moment, reverse motion, slow-motion aura, temporal distortion.' },
+    { n: 104, cat: 'power', fr: 'Portail Dimensionnel', kw: 'portail dimension', intensity: 'strong',
+      en: 'Dimensional portal, swirling gateway, otherworldly light, reality tearing open.' },
+    { n: 105, cat: 'power', fr: 'Pluie de Météores', kw: 'meteore pluie ciel', intensity: 'strong',
+      en: 'Meteor shower, sky on fire, falling rocks with trails, apocalyptic atmosphere.' },
+    { n: 106, cat: 'disaster', fr: 'Tornade', kw: 'tornade vent tempete', intensity: 'strong',
+      en: 'Tornado, violent wind, debris swirling, dark sky, destructive funnel cloud.' },
+    { n: 107, cat: 'disaster', fr: 'Tsunami', kw: 'tsunami vague ocean', intensity: 'strong',
+      en: 'Tsunami wave, massive wall of water, coastal destruction, terrifying scale.' },
+    { n: 108, cat: 'disaster', fr: 'Séisme', kw: 'seisme tremblement terre', intensity: 'strong',
+      en: 'Earthquake, ground shaking, cracks forming, buildings trembling, seismic chaos.' },
+    { n: 109, cat: 'disaster', fr: 'Éruption Volcanique', kw: 'volcan eruption lave', intensity: 'strong',
+      en: 'Volcanic eruption, lava fountains, ash clouds, glowing rivers of fire, apocalyptic sky.' },
+    { n: 110, cat: 'disaster', fr: 'Tempête de Sable', kw: 'tempete sable desert', intensity: 'strong',
+      en: 'Sandstorm, wall of dust approaching, desert chaos, obscured vision, orange haze.' },
+    { n: 111, cat: 'disaster', fr: 'Blizzard', kw: 'blizzard neige froid', intensity: 'strong',
+      en: 'Blizzard, violent snowstorm, whiteout conditions, freezing wind, ice crystals flying.' },
+    { n: 112, cat: 'disaster', fr: 'Orage Électrique', kw: 'orage eclair pluie', intensity: 'strong',
+      en: 'Thunderstorm, multiple lightning strikes, heavy rain, dark rolling clouds.' },
+    { n: 113, cat: 'disaster', fr: 'Aurore Boréale', kw: 'aurore boreale ciel', intensity: 'subtle',
+      en: 'Aurora borealis, green and pink sky ribbons, dancing lights, arctic night magic.' },
+    { n: 114, cat: 'disaster', fr: 'Éclipse', kw: 'eclipse soleil lune', intensity: 'moderate',
+      en: 'Solar eclipse, moon covering sun, corona ring, eerie daylight darkness.' },
+    { n: 115, cat: 'disaster', fr: 'Pluie d\'Étoiles Filantes', kw: 'etoiles filantes nuit', intensity: 'subtle',
+      en: 'Meteor shower night sky, shooting stars, wishful atmosphere, cosmic beauty.' },
+    { n: 116, cat: 'sport', fr: 'Football', kw: 'football foot but', intensity: 'strong',
+      en: 'Football match, goal scoring, celebration, slow-motion net ripple, stadium roar.' },
+    { n: 117, cat: 'sport', fr: 'Basketball', kw: 'basketball dunk panier', intensity: 'strong',
+      en: 'Basketball dunk, hang time, crowd cheering, sweat flying, athletic power.' },
+    { n: 118, cat: 'sport', fr: 'Tennis', kw: 'tennis echange smash', intensity: 'strong',
+      en: 'Tennis match, powerful serve, rapid rally, smash, precise footwork.' },
+    { n: 119, cat: 'sport', fr: 'Course à Pied', kw: 'course pied sprint', intensity: 'strong',
+      en: 'Running race, sprint motion, determination, sweat, crossing finish line.' },
+    { n: 120, cat: 'sport', fr: 'Natation', kw: 'natation nage piscine', intensity: 'moderate',
+      en: 'Swimming, underwater motion, splash, stroke technique, Olympic pool.' },
+    { n: 121, cat: 'sport', fr: 'Skateboard', kw: 'skateboard figure', intensity: 'strong',
+      en: 'Skateboarding, trick, grind, kickflip, urban spots, raw energy.' },
+    { n: 122, cat: 'sport', fr: 'Surf', kw: 'surf vague ocean', intensity: 'strong',
+      en: 'Surfing, riding wave, tube ride, spray, ocean power, balance.' },
+    { n: 123, cat: 'sport', fr: 'Escalade', kw: 'escalade grimpe sommet', intensity: 'moderate',
+      en: 'Rock climbing, ascent, effort, grip, reaching summit, mountain scale.' },
+    { n: 124, cat: 'sport', fr: 'Gymnastique', kw: 'gymnastique figure', intensity: 'strong',
+      en: 'Gymnastics, flips, rotations, grace, power, landing poise.' },
+    { n: 125, cat: 'sport', fr: 'Boxe / MMA', kw: 'boxe mma ko', intensity: 'strong',
+      en: 'Boxing or MMA fight, punch impact, sweat, KO moment, ring atmosphere.' },
+    { n: 126, cat: 'sport', fr: 'Cyclisme', kw: 'cyclisme velo course', intensity: 'strong',
+      en: 'Cycling race, speed, peloton, mountain pass, effort, wind.' },
+    { n: 127, cat: 'sport', fr: 'Ski / Snowboard', kw: 'ski snowboard neige', intensity: 'strong',
+      en: 'Skiing or snowboarding, powder snow, jump, carve, mountain slope, cold air.' },
+    { n: 128, cat: 'sport', fr: 'Formule 1', kw: 'formule 1 course voiture', intensity: 'strong',
+      en: 'Formula 1 race, speed, overtake, pit stop, engine roar, asphalt blur.' },
+    { n: 129, cat: 'sport', fr: 'Parkour', kw: 'parkour saut urbain', intensity: 'strong',
+      en: 'Parkour, urban jumps, fluid movement, rooftop leap, athletic flow.' },
+    { n: 130, cat: 'sport', fr: 'Yoga', kw: 'yoga respiration posture', intensity: 'subtle',
+      en: 'Yoga practice, slow breathing, balanced posture, serenity, soft light.' },
+    { n: 131, cat: 'vehicle', fr: 'Voiture de Sport', kw: 'voiture sport drift', intensity: 'strong',
+      en: 'Sports car, drift, acceleration, reflections, engine power, night road.' },
+    { n: 132, cat: 'vehicle', fr: 'Moto', kw: 'moto vitesse virage', intensity: 'strong',
+      en: 'Motorcycle, wheelie, cornering, speed, rider lean, asphalt rush.' },
+    { n: 133, cat: 'vehicle', fr: 'Avion', kw: 'avion decollage vol', intensity: 'moderate',
+      en: 'Airplane, takeoff, clouds, cockpit view, wing flex, sky travel.' },
+    { n: 134, cat: 'vehicle', fr: 'Hélicoptère', kw: 'helicoptere vol', intensity: 'moderate',
+      en: 'Helicopter flight, rotor spin, aerial view, wind, city below.' },
+    { n: 135, cat: 'vehicle', fr: 'Bateau', kw: 'bateau mer vague', intensity: 'moderate',
+      en: 'Boat sailing, waves, spray, wake, ocean horizon.' },
+    { n: 136, cat: 'vehicle', fr: 'Train', kw: 'train rail paysage', intensity: 'moderate',
+      en: 'Train passing, landscape scrolling, rails, motion, journey.' },
+    { n: 137, cat: 'vehicle', fr: 'Vélo', kw: 'velo balade chemin', intensity: 'moderate',
+      en: 'Bicycle ride, wheel spin, countryside path, gentle motion.' },
+    { n: 138, cat: 'vehicle', fr: 'Tracteur / Agricole', kw: 'tracteur champ agricole', intensity: 'moderate',
+      en: 'Tractor in field, ploughing, dusty earth, rural season, harvest.' },
+    { n: 139, cat: 'vehicle', fr: 'Robot / Mecha', kw: 'robot mecha marche', intensity: 'strong',
+      en: 'Giant robot, mecha walking, mechanical joints, sci-fi scale, power.' },
+    { n: 140, cat: 'vehicle', fr: 'Vaisseau Spatial', kw: 'vaisseau spatial espace', intensity: 'strong',
+      en: 'Spaceship, hyperdrive, stars streaking, cockpit lights, cosmic travel.' },
+    { n: 141, cat: 'emotion', fr: 'Joie', kw: 'joie rire sourire', intensity: 'moderate',
+      en: 'Joyful expression, bright smile, laughing eyes, warm glow, happy energy.' },
+    { n: 142, cat: 'emotion', fr: 'Tristesse', kw: 'tristesse larme pleure', intensity: 'subtle',
+      en: 'Sadness, single tear rolling, downward gaze, rain, melancholic atmosphere.' },
+    { n: 143, cat: 'emotion', fr: 'Colère', kw: 'colere rage poing', intensity: 'strong',
+      en: 'Anger, intense stare, clenched fists, red tint, boiling tension.' },
+    { n: 144, cat: 'emotion', fr: 'Peur', kw: 'peur effroi tremblement', intensity: 'moderate',
+      en: 'Fear, trembling, backing away, shadow looming, tense dread.' },
+    { n: 145, cat: 'emotion', fr: 'Surprise', kw: 'surprise choc etonnement', intensity: 'strong',
+      en: 'Surprise, widened eyes, gasp, sudden reveal, shock moment.' },
+    { n: 146, cat: 'emotion', fr: 'Amour', kw: 'amour tendresse regard', intensity: 'subtle',
+      en: 'Love, tender gaze, soft touch, warm light, intimate closeness.' },
+    { n: 147, cat: 'emotion', fr: 'Nostalgie', kw: 'nostalgie souvenir sepia', intensity: 'subtle',
+      en: 'Nostalgia, sepia tones, soft focus, dreamy memory, gentle longing.' },
+    { n: 148, cat: 'emotion', fr: 'Détermination', kw: 'determination regard fixe', intensity: 'moderate',
+      en: 'Determination, fixed gaze, clenched jaw, rising music, resolve.' },
+    { n: 149, cat: 'emotion', fr: 'Folie', kw: 'folie rire nerveux', intensity: 'strong',
+      en: 'Madness, nervous laughter, unstable gaze, distortion, chaotic energy.' },
+    { n: 150, cat: 'emotion', fr: 'Sérénité', kw: 'serenite calme paix', intensity: 'subtle',
+      en: 'Serenity, slow breathing, closed eyes, peaceful light, calm stillness.' },
+    { n: 151, cat: 'game', fr: 'Let\'s Play', kw: 'lets play gaming reaction', intensity: 'moderate',
+      en: 'Let\'s play gaming stream, avatar reacting, webcam energy, game footage.' },
+    { n: 152, cat: 'game', fr: 'Cinématique de Jeu', kw: 'cinematique jeu aaa', intensity: 'strong',
+      en: 'AAA game cinematic, epic scale, dramatic lighting, hero moment, orchestral mood.' },
+    { n: 153, cat: 'game', fr: 'Personnage RPG', kw: 'rpg personnage stats', intensity: 'moderate',
+      en: 'RPG character portrait, speaking, stats overlay, fantasy UI, adventure mood.' },
+    { n: 154, cat: 'game', fr: 'Carte de Jeu', kw: 'carte jeu animation', intensity: 'moderate',
+      en: 'Game card animating, units moving, spells casting, board game energy.' },
+    { n: 155, cat: 'game', fr: 'Streaming Overlay', kw: 'stream overlay anime', intensity: 'moderate',
+      en: 'Streaming overlay, animated background, alerts, webcam frame, lively vibe.' },
+    { n: 156, cat: 'game', fr: 'Avatar VTuber', kw: 'vtuber avatar anime', intensity: 'moderate',
+      en: 'VTuber avatar, 2D anime character, expressive movement, talking, lively.' },
+    { n: 157, cat: 'game', fr: 'Monde Voxel', kw: 'voxel minecraft bloc', intensity: 'moderate',
+      en: 'Voxel world, blocky Minecraft-style, cubic environment, playful adventure.' },
+    { n: 158, cat: 'game', fr: 'Monde Low Poly', kw: 'low poly geometrique', intensity: 'moderate',
+      en: 'Low poly 3D world, geometric minimalism, flat shading, stylized aesthetic.' },
+    { n: 159, cat: 'game', fr: 'Réalité Augmentée', kw: 'realite augmentee 3d', intensity: 'moderate',
+      en: 'Augmented reality, 3D object in real photo, holographic overlay, tech integration.' },
+    { n: 160, cat: 'game', fr: 'Réalité Virtuelle', kw: 'realite virtuelle 360', intensity: 'moderate',
+      en: 'Virtual reality, immersive 360 view, VR headset world, digital environment.' },
+    { n: 161, cat: 'music', fr: 'Clip Rap', kw: 'rap clip hip hop', intensity: 'strong',
+      en: 'Rap music video, urban atmosphere, chains, neon, low-angle shots, attitude.' },
+    { n: 162, cat: 'music', fr: 'Clip Pop', kw: 'pop clip couleur', intensity: 'strong',
+      en: 'Pop music video, bright colors, dance, confetti, glossy production.' },
+    { n: 163, cat: 'music', fr: 'Clip Rock', kw: 'rock clip guitare', intensity: 'strong',
+      en: 'Rock music video, guitar, smoke, stage lights, raw energy, crowd.' },
+    { n: 164, cat: 'music', fr: 'Clip Électro', kw: 'electro clip neon laser', intensity: 'strong',
+      en: 'Electronic music video, lasers, neon, crowd, synthwave, futuristic rave.' },
+    { n: 165, cat: 'music', fr: 'Clip Jazz', kw: 'jazz club saxophone', intensity: 'subtle',
+      en: 'Jazz club, smoke, saxophone, moody lighting, intimate performance.' },
+    { n: 166, cat: 'music', fr: 'Clip Classique', kw: 'classique orchestre', intensity: 'subtle',
+      en: 'Classical music, orchestra, chandeliers, elegance, concert hall.' },
+    { n: 167, cat: 'music', fr: 'Clip Reggaeton', kw: 'reggaeton plage danse', intensity: 'strong',
+      en: 'Reggaeton music video, beach, dance, warm colors, summer vibes, rhythm.' },
+    { n: 168, cat: 'music', fr: 'Clip Country', kw: 'country route campagne', intensity: 'moderate',
+      en: 'Country music video, open road, countryside, sunset, acoustic mood.' },
+    { n: 169, cat: 'music', fr: 'Clip Metal', kw: 'metal clip feu chaos', intensity: 'strong',
+      en: 'Metal music video, fire, chaos, high contrast, intense, dark energy.' },
+    { n: 170, cat: 'music', fr: 'Clip Lo-Fi', kw: 'lofi calme anime pluie', intensity: 'subtle',
+      en: 'Lo-fi aesthetic, calm anime atmosphere, rain, warm tones, study mood.' },
+    { n: 171, cat: 'edu', fr: 'Explication Scientifique', kw: 'science explication', intensity: 'moderate',
+      en: 'Scientific explanation, animated diagram, particles, DNA, educational clarity.' },
+    { n: 172, cat: 'edu', fr: 'Histoire', kw: 'histoire reconstitution', intensity: 'moderate',
+      en: 'Historical reconstruction, period-accurate detail, documentary tone, atmospheric.' },
+    { n: 173, cat: 'edu', fr: 'Géographie', kw: 'geographie carte relief', intensity: 'moderate',
+      en: 'Geography visualization, unfolding map, 3D terrain, borders, educational.' },
+    { n: 174, cat: 'edu', fr: 'Mathématiques', kw: 'maths equations formes', intensity: 'subtle',
+      en: 'Mathematics visual, shapes, equations, animated proof, clean diagram.' },
+    { n: 175, cat: 'edu', fr: 'Langues', kw: 'langue mot prononciation', intensity: 'subtle',
+      en: 'Language learning, illustrated word, pronunciation, contextual example.' },
+    { n: 176, cat: 'edu', fr: 'Cuisine', kw: 'cuisine recette etape', intensity: 'moderate',
+      en: 'Cooking tutorial, step-by-step, hands, ingredients, appetizing motion.' },
+    { n: 177, cat: 'edu', fr: 'Bricolage', kw: 'bricolage tutoriel outil', intensity: 'moderate',
+      en: 'DIY tutorial, tools, hands working, practical demonstration.' },
+    { n: 178, cat: 'edu', fr: 'Médical', kw: 'medical anatomie organe', intensity: 'subtle',
+      en: 'Medical animation, anatomy, organ function, circulation, clinical clarity.' },
+    { n: 179, cat: 'edu', fr: 'Astronomie', kw: 'astronomie planete galaxie', intensity: 'moderate',
+      en: 'Astronomy visualization, planets, galaxies, black holes, cosmic scale.' },
+    { n: 180, cat: 'edu', fr: 'Nature Documentaire', kw: 'nature documentaire animal', intensity: 'subtle',
+      en: 'Nature documentary, animal behavior, ecosystem, majestic, Attenborough mood.' },
+    { n: 181, cat: 'biz', fr: 'Présentation Produit', kw: 'produit presentation business', intensity: 'subtle',
+      en: 'Product presentation, rotation, zoom, key features, clean corporate look.' },
+    { n: 182, cat: 'biz', fr: 'Témoignage Client', kw: 'temoignage client', intensity: 'subtle',
+      en: 'Client testimonial, portrait talking, quote overlay, trustworthy atmosphere.' },
+    { n: 183, cat: 'biz', fr: 'Annonce Entreprise', kw: 'entreprise annonce logo', intensity: 'moderate',
+      en: 'Company announcement, animated logo, team, vision, corporate pride.' },
+    { n: 184, cat: 'biz', fr: 'Recrutement', kw: 'recrutement emploi bureau', intensity: 'subtle',
+      en: 'Recruitment video, office, team, company culture, welcoming mood.' },
+    { n: 185, cat: 'biz', fr: 'Formation Interne', kw: 'formation interne slides', intensity: 'subtle',
+      en: 'Internal training, animated slides, diagrams, professional clarity.' },
+    { n: 186, cat: 'biz', fr: 'Rapport Annuel', kw: 'rapport annuel chiffres', intensity: 'subtle',
+      en: 'Annual report, animated charts, growth, numbers, corporate confidence.' },
+    { n: 187, cat: 'biz', fr: 'Immobilier', kw: 'immobilier visite virtuelle', intensity: 'subtle',
+      en: 'Real estate tour, virtual visit, floor plan, neighborhood, inviting.' },
+    { n: 188, cat: 'biz', fr: 'Restaurant', kw: 'restaurant plat ambiance', intensity: 'moderate',
+      en: 'Restaurant showcase, dishes, ambiance, service, appetizing mood.' },
+    { n: 189, cat: 'biz', fr: 'Hôtel', kw: 'hotel chambre piscine', intensity: 'subtle',
+      en: 'Hotel showcase, room, pool, view, luxury hospitality atmosphere.' },
+    { n: 190, cat: 'biz', fr: 'Boutique', kw: 'boutique vitrine promotion', intensity: 'moderate',
+      en: 'Retail store, window display, product, promotion, shopper appeal.' },
+    { n: 191, cat: 'travel', fr: 'Carte Postale Animée', kw: 'carte postale monument', intensity: 'subtle',
+      en: 'Animated postcard, landmark coming alive, gentle motion, wanderlust.' },
+    { n: 192, cat: 'travel', fr: 'Guide Touristique', kw: 'guide touristique lieu', intensity: 'subtle',
+      en: 'Tourist guide, location highlights, tips, inviting exploration.' },
+    { n: 193, cat: 'travel', fr: 'Road Trip', kw: 'road trip route paysage', intensity: 'moderate',
+      en: 'Road trip, highway, landscape scrolling, stops, freedom mood.' },
+    { n: 194, cat: 'travel', fr: 'Croisière', kw: 'croisiere mer bateau', intensity: 'moderate',
+      en: 'Cruise, sea, deck, ports of call, relaxing voyage.' },
+    { n: 195, cat: 'travel', fr: 'Safari', kw: 'safari animaux savane', intensity: 'moderate',
+      en: 'Safari, wildlife, savanna, sunset, animal encounter, adventure.' },
+    { n: 196, cat: 'travel', fr: 'Montagne', kw: 'montagne sommet randonnee', intensity: 'moderate',
+      en: 'Mountain landscape, summit, snow, hiking, epic scale.' },
+    { n: 197, cat: 'travel', fr: 'Plage Paradisiaque', kw: 'plage paradis sable', intensity: 'subtle',
+      en: 'Paradise beach, sand, palm trees, waves, turquoise water, serenity.' },
+    { n: 198, cat: 'travel', fr: 'Ville Nocturne', kw: 'ville nuit lumiere', intensity: 'moderate',
+      en: 'City at night, lights, traffic, life, urban glow, vibrant streets.' },
+    { n: 199, cat: 'travel', fr: 'Village Traditionnel', kw: 'village tradition artisanat', intensity: 'subtle',
+      en: 'Traditional village, houses, alleys, crafts, timeless atmosphere.' },
+    { n: 200, cat: 'travel', fr: 'Aventure Extrême', kw: 'aventure extreme sport', intensity: 'strong',
+      en: 'Extreme adventure, adrenaline, jump, cascade, heart-pounding action.' },
+    { n: 201, cat: 'era', fr: 'Préhistoire', kw: 'prehistoire dinosaure', intensity: 'strong',
+      en: 'Prehistoric era, dinosaurs, volcanoes, wild nature, ancient atmosphere.' },
+    { n: 202, cat: 'era', fr: 'Égypte Antique', kw: 'egypte pyramide pharaon', intensity: 'moderate',
+      en: 'Ancient Egypt, pyramids, hieroglyphs, pharaoh, desert majesty.' },
+    { n: 203, cat: 'era', fr: 'Grèce Antique', kw: 'grece temple mythologie', intensity: 'moderate',
+      en: 'Ancient Greece, temples, philosophers, mythology, marble elegance.' },
+    { n: 204, cat: 'era', fr: 'Rome Antique', kw: 'rome colisee legion', intensity: 'strong',
+      en: 'Ancient Rome, Colosseum, legions, emperor, imperial grandeur.' },
+    { n: 205, cat: 'era', fr: 'Moyen Âge', kw: 'moyen age chateau chevalier', intensity: 'moderate',
+      en: 'Middle Ages, castle, knights, tournament, medieval atmosphere.' },
+    { n: 206, cat: 'era', fr: 'Renaissance', kw: 'renaissance art inventeur', intensity: 'subtle',
+      en: 'Renaissance, art, inventors, cities, cultural flourishing.' },
+    { n: 207, cat: 'era', fr: 'XVIIIe siècle', kw: 'versailles carrosse', intensity: 'subtle',
+      en: '18th century, Versailles, carriages, candlelight, aristocratic elegance.' },
+    { n: 208, cat: 'era', fr: 'Années 1920', kw: 'annees 20 charleston art deco', intensity: 'moderate',
+      en: '1920s, Charleston dance, Art Deco, jazz, flapper, vintage glamour.' },
+    { n: 209, cat: 'era', fr: 'Années 1950', kw: 'annees 50 rock voiture', intensity: 'moderate',
+      en: '1950s, rock and roll, classic cars, drive-in, diner, Americana.' },
+    { n: 210, cat: 'era', fr: 'Années 1980', kw: 'annees 80 neon vhs synthwave', intensity: 'strong',
+      en: '1980s, neon, VHS, synthwave, bright colors, retro futuristic.' },
+    { n: 211, cat: 'era', fr: 'Années 2000', kw: 'annees 2000 y2k msn', intensity: 'moderate',
+      en: '2000s, Y2K, MSN, early internet, pop culture, nostalgia.' },
+    { n: 212, cat: 'era', fr: 'Futur 2100', kw: 'futur 2100 robot ia', intensity: 'strong',
+      en: 'Future 2100, high-tech city, AI, robots, sleek design, advanced civilization.' },
+    { n: 213, cat: 'art', fr: 'Impressionnisme', kw: 'impressionnisme monet', intensity: 'subtle',
+      en: 'Impressionist painting, visible brushstrokes, light, nature, Monet style.' },
+    { n: 214, cat: 'art', fr: 'Cubisme', kw: 'cubisme geometrique', intensity: 'moderate',
+      en: 'Cubist style, geometric forms, multiple viewpoints, Picasso influence.' },
+    { n: 215, cat: 'art', fr: 'Surréalisme', kw: 'surrealisme dali reve', intensity: 'moderate',
+      en: 'Surrealist aesthetic, dream logic, impossible juxtapositions, Dali influence.' },
+    { n: 216, cat: 'art', fr: 'Pop Art', kw: 'pop art warhol', intensity: 'moderate',
+      en: 'Pop art style, bright colors, Warhol influence, comic repetition, bold.' },
+    { n: 217, cat: 'art', fr: 'Art Nouveau', kw: 'art nouveau mucha', intensity: 'subtle',
+      en: 'Art Nouveau, flowing curves, floral motifs, Mucha style, elegant ornament.' },
+    { n: 218, cat: 'art', fr: 'Art Déco', kw: 'art deco geometrie or', intensity: 'moderate',
+      en: 'Art Deco, geometric patterns, gold accents, 1920s luxury, streamlined.' },
+    { n: 219, cat: 'art', fr: 'Bauhaus', kw: 'bauhaus minimalisme', intensity: 'subtle',
+      en: 'Bauhaus style, minimalism, function, geometric forms, primary colors.' },
+    { n: 220, cat: 'art', fr: 'Expressionnisme', kw: 'expressionnisme emotion', intensity: 'moderate',
+      en: 'Expressionist style, raw emotion, intense colors, distorted forms.' },
+    { n: 221, cat: 'art', fr: 'Minimalisme', kw: 'minimalisme epure', intensity: 'subtle',
+      en: 'Minimalist aesthetic, purified forms, silence, essential, negative space.' },
+    { n: 222, cat: 'art', fr: 'Baroque', kw: 'baroque opulence', intensity: 'moderate',
+      en: 'Baroque style, opulence, dramatic movement, theatrical lighting, ornate.' },
+    { n: 223, cat: 'illusion', fr: 'Trompe-l\'œil', kw: 'trompe oeil illusion', intensity: 'moderate',
+      en: 'Trompe-l\'oeil, image appearing to leave the frame, 3D illusion, depth trick.' },
+    { n: 224, cat: 'illusion', fr: 'Anamorphose', kw: 'anamorphose deformation', intensity: 'moderate',
+      en: 'Anamorphic illusion, distorted image revealing itself from one angle.' },
+    { n: 225, cat: 'illusion', fr: 'Double Sens', kw: 'double sens optique', intensity: 'subtle',
+      en: 'Dual image, two pictures in one, optical ambiguity, perceptual shift.' },
+    { n: 226, cat: 'illusion', fr: 'Escher', kw: 'escher impossible', intensity: 'moderate',
+      en: 'Escher-style impossible geometry, endless stairs, paradox, optical puzzle.' },
+    { n: 227, cat: 'illusion', fr: 'Optical Illusion', kw: 'illusion optique mouvement', intensity: 'moderate',
+      en: 'Optical illusion, perceived motion without real movement, hypnotic pattern.' },
+    { n: 228, cat: 'illusion', fr: 'Forced Perspective', kw: 'perspective forcee', intensity: 'moderate',
+      en: 'Forced perspective, size distortion, playful scale trick, clever framing.' },
+    { n: 229, cat: 'illusion', fr: 'Réflexion Infinie', kw: 'reflexion miroir infini', intensity: 'moderate',
+      en: 'Infinite mirror reflection, endless repetition, recursive tunnel.' },
+    { n: 230, cat: 'illusion', fr: 'Portrait Composite', kw: 'portrait composite mosaique', intensity: 'subtle',
+      en: 'Composite portrait, face made of smaller images, mosaic illusion.' },
+    { n: 231, cat: 'social', fr: 'TikTok Hook', kw: 'tiktok hook viral', intensity: 'strong',
+      en: 'TikTok hook, 3-second attention grab, fast cuts, trendy energy.' },
+    { n: 232, cat: 'social', fr: 'Reel Transition', kw: 'reel transition instagram', intensity: 'strong',
+      en: 'Instagram Reel transition, smooth creative cut, viral trend style.' },
+    { n: 233, cat: 'social', fr: 'YouTube Intro', kw: 'youtube intro logo', intensity: 'moderate',
+      en: 'YouTube intro, animated logo, music sting, channel branding.' },
+    { n: 234, cat: 'social', fr: 'Short Viral', kw: 'short viral boucle', intensity: 'strong',
+      en: 'Viral short, perfect loop, satisfying motion, replay appeal.' },
+    { n: 235, cat: 'social', fr: 'Story Instagram', kw: 'story instagram sondage', intensity: 'moderate',
+      en: 'Instagram Story, poll, question, swipe up, interactive mood.' },
+    { n: 236, cat: 'social', fr: 'Live Stream', kw: 'live stream overlay chat', intensity: 'moderate',
+      en: 'Live stream, overlay, chat, alerts, real-time energy.' },
+    { n: 237, cat: 'social', fr: 'Podcast Visual', kw: 'podcast visual onde', intensity: 'subtle',
+      en: 'Visual podcast, audio waves, quote cards, guest portraits, studio vibe.' },
+    { n: 238, cat: 'social', fr: 'Mème Trend', kw: 'meme trend actuel', intensity: 'strong',
+      en: 'Trending meme format, current humor, viral twist, relatable punchline.' },
+    { n: 239, cat: 'social', fr: 'Before / After', kw: 'avant apres transformation', intensity: 'moderate',
+      en: 'Before and after, shocking transformation, split reveal, wow effect.' },
+    { n: 240, cat: 'social', fr: 'Day in the Life', kw: 'day in life routine', intensity: 'moderate',
+      en: 'Day in the life vlog, routine in timelapse, authentic lifestyle, casual.' },
+    { n: 241, cat: 'sci', fr: 'ADN', kw: 'adn double helice', intensity: 'subtle',
+      en: 'DNA double helix rotating, molecular detail, genetic code, scientific beauty.' },
+    { n: 242, cat: 'sci', fr: 'Cellule', kw: 'cellule mitose biologie', intensity: 'subtle',
+      en: 'Cell biology, mitosis, organelles moving, microscopic life, scientific wonder.' },
+    { n: 243, cat: 'sci', fr: 'Cerveau', kw: 'cerveau neurone synapse', intensity: 'subtle',
+      en: 'Brain activity, neurons firing, synapses, electric signals, consciousness.' },
+    { n: 244, cat: 'sci', fr: 'Espace', kw: 'espace galaxie trou noir', intensity: 'moderate',
+      en: 'Space, galaxy, nebula, black hole, cosmic scale, awe-inspiring.' },
+    { n: 245, cat: 'sci', fr: 'Robotique', kw: 'robotique bras drone', intensity: 'moderate',
+      en: 'Robotics, robotic arm, drone, AI, mechanical precision, future tech.' },
+    { n: 246, cat: 'sci', fr: 'Nanotechnologie', kw: 'nanotechnologie microscopique', intensity: 'subtle',
+      en: 'Nanotechnology, microscopic scale, molecular machines, futuristic science.' },
+    { n: 247, cat: 'sci', fr: 'Réalité Quantique', kw: 'quantique particule', intensity: 'moderate',
+      en: 'Quantum reality, particles, superposition, wave function, abstract physics.' },
+    { n: 248, cat: 'sci', fr: 'Clonage', kw: 'clonage duplication', intensity: 'moderate',
+      en: 'Cloning, subject duplicating, multiple copies, sci-fi laboratory mood.' },
+    { n: 249, cat: 'sci', fr: 'Terraformation', kw: 'terraformation planete', intensity: 'strong',
+      en: 'Terraforming, barren planet becoming habitable, atmosphere forming, epic scale.' },
+    { n: 250, cat: 'sci', fr: 'Post-apocalyptique', kw: 'post apocalyptique ruine', intensity: 'moderate',
+      en: 'Post-apocalyptic world, ruins, survival, nature reclaiming, desolate beauty.' },
+    { n: 251, cat: 'fantasy', fr: 'Dragon', kw: 'dragon feu ecaille', intensity: 'strong',
+      en: 'Dragon, flying, breathing fire, scales shimmering, epic fantasy scale.' },
+    { n: 252, cat: 'fantasy', fr: 'Licorne', kw: 'licorne magie arc en ciel', intensity: 'subtle',
+      en: 'Unicorn, magical forest, rainbow, sparkling mane, enchanted atmosphere.' },
+    { n: 253, cat: 'fantasy', fr: 'Sirène', kw: 'sirene ocean chant', intensity: 'moderate',
+      en: 'Mermaid, ocean, tail, underwater singing, aquatic magic.' },
+    { n: 254, cat: 'fantasy', fr: 'Phénix', kw: 'phenix feu renaissance', intensity: 'strong',
+      en: 'Phoenix, reborn from flames, fiery wings, majestic, cyclical rebirth.' },
+    { n: 255, cat: 'fantasy', fr: 'Loup-garou', kw: 'loup garou pleine lune', intensity: 'strong',
+      en: 'Werewolf transformation, full moon, fur growing, primal power, horror beauty.' },
+    { n: 256, cat: 'fantasy', fr: 'Vampire', kw: 'vampire nuit chateau', intensity: 'moderate',
+      en: 'Vampire, night, castle, fangs, gothic elegance, immortal seduction.' },
+    { n: 257, cat: 'fantasy', fr: 'Fantôme', kw: 'fantome apparition', intensity: 'subtle',
+      en: 'Ghost, translucent apparition, cold spots, eerie presence, spectral beauty.' },
+    { n: 258, cat: 'fantasy', fr: 'Ange / Démon', kw: 'ange demon aile', intensity: 'moderate',
+      en: 'Angel or demon, wings, halo or horns, divine vs infernal, dramatic contrast.' },
+    { n: 259, cat: 'fantasy', fr: 'Dieu Nordique', kw: 'dieu nordique thor', intensity: 'strong',
+      en: 'Norse god, thunder, hammer, Valhalla, epic mythological power.' },
+    { n: 260, cat: 'fantasy', fr: 'Créature des Abysses', kw: 'abysses tentacule monstre', intensity: 'strong',
+      en: 'Abyssal creature, deep ocean, tentacles, bioluminescence, terrifying scale.' },
+    { n: 261, cat: 'cinema', fr: 'Western', kw: 'western duel desert', intensity: 'moderate',
+      en: 'Western, duel, dust, sunset, revolver, lone hero, Morricone mood.' },
+    { n: 262, cat: 'cinema', fr: 'Polar', kw: 'polar enquete pluie', intensity: 'moderate',
+      en: 'Detective noir, investigation, rain, trench coat, moody city night.' },
+    { n: 263, cat: 'cinema', fr: 'Horreur', kw: 'horreur peur saut', intensity: 'strong',
+      en: 'Horror, jump scare, shadow, silence, creeping dread, terrifying reveal.' },
+    { n: 264, cat: 'cinema', fr: 'Comédie', kw: 'comedie gag drole', intensity: 'moderate',
+      en: 'Comedy, visual gag, timing, expressive reaction, lighthearted humor.' },
+    { n: 265, cat: 'cinema', fr: 'Romance', kw: 'romance amour baiser', intensity: 'subtle',
+      en: 'Romance, tender look, rain, kiss, warm light, emotional intimacy.' },
+    { n: 266, cat: 'cinema', fr: 'Science-Fiction', kw: 'science fiction futur', intensity: 'moderate',
+      en: 'Science fiction, future, technology, philosophical question, sleek design.' },
+    { n: 267, cat: 'cinema', fr: 'Fantasy', kw: 'fantasy quete magie', intensity: 'moderate',
+      en: 'Fantasy, quest, magic, creature, epic journey, mythical world.' },
+    { n: 268, cat: 'cinema', fr: 'Thriller', kw: 'thriller tension poursuite', intensity: 'strong',
+      en: 'Thriller, tension, chase, twist, suspense, heart-racing pace.' },
+    { n: 269, cat: 'cinema', fr: 'Documentaire', kw: 'documentaire reel archive', intensity: 'subtle',
+      en: 'Documentary, real footage, testimony, archive, authentic observation.' },
+    { n: 270, cat: 'cinema', fr: 'Film Noir', kw: 'film noir cigarette', intensity: 'subtle',
+      en: 'Film noir, shadow, cigarette smoke, femme fatale, 1940s mood, rain.' },
+    { n: 271, cat: 'cinema', fr: 'Comédie Musicale', kw: 'comedie musicale danse', intensity: 'strong',
+      en: 'Musical, dance number, singing, colorful sets, joyful choreography.' },
+    { n: 272, cat: 'cinema', fr: 'Guerre', kw: 'guerre soldat champ', intensity: 'strong',
+      en: 'War film, battlefield, soldier, sacrifice, smoke, dramatic intensity.' },
+    { n: 273, cat: 'cinema', fr: 'Espionnage', kw: 'espionnage gadget infiltration', intensity: 'moderate',
+      en: 'Spy thriller, gadgets, infiltration, twist, suave hero, tense mission.' },
+    { n: 274, cat: 'cinema', fr: 'Catastrophe', kw: 'catastrophe chaos sauvetage', intensity: 'strong',
+      en: 'Disaster movie, chaos, survival, rescue, epic scale, imminent danger.' },
+    { n: 275, cat: 'cinema', fr: 'Biopic', kw: 'biopic vie epoque', intensity: 'subtle',
+      en: 'Biopic, life story, period detail, transformation, inspiring journey.' },
+    { n: 276, cat: 'adv', fr: 'Rotoscopie', kw: 'rotoscopie animation', intensity: 'moderate',
+      en: 'Rotoscoped animation, real footage traced, painterly motion, A Scanner Darkly style.' },
+    { n: 277, cat: 'adv', fr: 'Cel Shading', kw: 'cel shading cartoon 3d', intensity: 'moderate',
+      en: 'Cel-shaded 3D, cartoon rendering, flat shading, black outlines, video game look.' },
+    { n: 278, cat: 'adv', fr: 'Low Poly', kw: 'low poly facette', intensity: 'moderate',
+      en: 'Low poly 3D, faceted geometry, flat shading, minimalist stylized aesthetic.' },
+    { n: 279, cat: 'adv', fr: 'Pixel Art', kw: 'pixel art 8 bit', intensity: 'moderate',
+      en: 'Pixel art, 8-bit or 16-bit retro game style, blocky, nostalgic, vibrant palette.' },
+    { n: 280, cat: 'adv', fr: 'Vectoriel', kw: 'vectoriel plat contour', intensity: 'subtle',
+      en: 'Vector art style, flat colors, clean outlines, graphic design, modern illustration.' },
+    { n: 281, cat: 'adv', fr: 'Gravure', kw: 'gravure encre hachure', intensity: 'subtle',
+      en: 'Engraving style, cross-hatching, ink lines, antique print, etched texture.' },
+    { n: 282, cat: 'adv', fr: 'Vitrail', kw: 'vitrail plomb lumiere', intensity: 'moderate',
+      en: 'Stained glass, lead lines, colored panes, light glowing through, cathedral mood.' },
+    { n: 283, cat: 'adv', fr: 'Mosaïque', kw: 'mosaique tesselle', intensity: 'moderate',
+      en: 'Mosaic, tessera tiles, ancient Roman style, grout lines, intricate pattern.' },
+    { n: 284, cat: 'adv', fr: 'Origami', kw: 'origami papier plie', intensity: 'moderate',
+      en: 'Origami, folded paper, sharp creases, paper texture, geometric elegance.' },
+    { n: 285, cat: 'adv', fr: 'Papercut', kw: 'papercut decoupe papier', intensity: 'moderate',
+      en: 'Papercut art, layered paper, shadows, handcrafted depth, delicate silhouettes.' },
+    { n: 286, cat: 'adv', fr: 'Néon Sign', kw: 'neon sign tube lumiere', intensity: 'moderate',
+      en: 'Neon sign, glowing tubes, night, buzzing light, retro urban atmosphere.' },
+    { n: 287, cat: 'adv', fr: 'Hologramme', kw: 'hologramme scanline', intensity: 'moderate',
+      en: 'Hologram, translucent projection, scanlines, flicker, sci-fi display.' },
+    { n: 288, cat: 'adv', fr: 'X-Ray', kw: 'xray radiographie', intensity: 'subtle',
+      en: 'X-ray vision, seeing through matter, skeletal, medical imaging, eerie.' },
+    { n: 289, cat: 'adv', fr: 'Thermique', kw: 'thermique infrarouge', intensity: 'moderate',
+      en: 'Thermal camera, infrared, heat signatures, color gradient, night vision.' },
+    { n: 290, cat: 'adv', fr: 'Sonar / Radar', kw: 'sonar radar detection', intensity: 'moderate',
+      en: 'Sonar or radar display, sweeping lines, detection blips, military tech.' },
+    { n: 291, cat: 'bonus', fr: 'Studio Créatif Complet', kw: 'studio creatif complet', intensity: 'moderate',
+      en: 'Complete creative studio, all effects available, cohesive production.' },
+    { n: 292, cat: 'bonus', fr: 'Mode Aléatoire Total', kw: 'aleatoire total random', intensity: 'moderate',
+      en: 'Fully random mode, AI chooses style, movement, camera, lighting, surprise result.' },
+    { n: 293, cat: 'bonus', fr: 'Chaîne YouTube', kw: 'youtube chaine intro outro', intensity: 'moderate',
+      en: 'YouTube channel production, intro, main content, outro, consistent branding.' },
+    { n: 294, cat: 'bonus', fr: 'Publicité', kw: 'publicite cta produit', intensity: 'moderate',
+      en: 'Advertisement, hook, product highlight, call to action, persuasive energy.' },
+    { n: 295, cat: 'bonus', fr: 'Story en 5 Plans', kw: 'story 5 plans decoupage', intensity: 'moderate',
+      en: 'Five-shot story structure, establishing, medium, close-up, detail, resolution.' },
+    { n: 296, cat: 'bonus', fr: 'Clip Musical', kw: 'clip musical sync beat', intensity: 'strong',
+      en: 'Music video, beat-synced cuts, performance shots, narrative inserts, rhythm.' },
+    { n: 297, cat: 'bonus', fr: 'Portrait Vivant', kw: 'portrait vivant yeux bouche', intensity: 'subtle',
+      en: 'Living portrait, breathing, blinking, mouth micro-motion, subtle life.' },
+    { n: 298, cat: 'bonus', fr: 'Photo Ancienne', kw: 'photo ancienne restauration', intensity: 'subtle',
+      en: 'Old photo restoration, colorization, gentle motion, faded memory revived.' },
+    { n: 299, cat: 'bonus', fr: 'Avatar Parlant', kw: 'avatar parlant tts lip sync', intensity: 'moderate',
+      en: 'Talking avatar, lip sync, TTS voice, expressive gestures, virtual presenter.' },
+    { n: 300, cat: 'bonus', fr: 'Multi-Images → 1 Vidéo', kw: 'multi images video diaporama', intensity: 'moderate',
+      en: 'Multiple images combined into one cinematic video, smooth transitions, coherent flow.' }
+];
+
+const CATEGORIES = [
+    { id: 'all', label: 'Tous' },
+    { id: 'style', label: '🎨 Styles' },
+    { id: 'fx', label: '✨ Effets' },
+    { id: 'fight', label: '🥋 Combat' },
+    { id: 'dance', label: '💃 Danse' },
+    { id: 'camera', label: '🎥 Caméra' },
+    { id: 'cut', label: '✂️ Montage' },
+    { id: 'power', label: '💥 Pouvoirs' },
+    { id: 'disaster', label: '🌪️ Catastrophes' },
+    { id: 'sport', label: '🏆 Sport' },
+    { id: 'vehicle', label: '🚗 Véhicules' },
+    { id: 'emotion', label: '🎭 Émotions' },
+    { id: 'game', label: '🎮 Gaming' },
+    { id: 'music', label: '🎵 Musique' },
+    { id: 'edu', label: '📚 Éducation' },
+    { id: 'biz', label: '🏢 Business' },
+    { id: 'travel', label: '🌍 Voyage' },
+    { id: 'era', label: '🕰️ Époques' },
+    { id: 'art', label: '🖼️ Art' },
+    { id: 'illusion', label: '🧠 Illusions' },
+    { id: 'social', label: '📱 Sociaux' },
+    { id: 'sci', label: '🧬 Sciences' },
+    { id: 'fantasy', label: '🧙 Fantasy' },
+    { id: 'cinema', label: '🎬 Cinéma' },
+    { id: 'adv', label: '🧩 Avancé' },
+    { id: 'bonus', label: '🎁 Bonus' }
+];
+
+// ══════════════════════════════════════════════════════════════════
+// ÉTAT GLOBAL
+// ══════════════════════════════════════════════════════════════════
+const state = {
+    images: [],
+    isRunning: false,
+    stopRequested: false,
+    queue: [],
+    completed: 0,
+    failed: 0,
+    selectedMode: null,
+    mainPrompt: '',
+    intensity: 'mode',
+    durationFrames: 153,
+    isLoadingImages: false,
+    creationAttemptsSinceLastError: 0,
+    modeFilter: 'all',
+    modeSearch: ''
+};
+
+// ══════════════════════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════════════════════
+let toastTimeout = null;
+function showToast(message, type = 'success', duration = 2500) {
+    const toast = document.getElementById('toast');
+    const icon = document.getElementById('toast-icon');
+    const text = document.getElementById('toast-text');
+    if (!toast || !icon || !text) return;
+    toast.classList.remove('visible', 'success', 'error', 'warn');
+    void toast.offsetWidth;
+    const icons = { success: '✓', error: '✕', warn: '⚠' };
+    icon.textContent = icons[type] || '✓';
+    text.textContent = message;
+    toast.classList.add(type);
+    requestAnimationFrame(() => toast.classList.add('visible'));
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('visible'), duration);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CACHE DES TEMPS
+// ══════════════════════════════════════════════════════════════════
+function loadTimingCache() {
+    try { return JSON.parse(localStorage.getItem(TIMING_CACHE_KEY) || '{}'); }
+    catch (e) { return {}; }
+}
+function saveTimingCache(cache) {
+    try { localStorage.setItem(TIMING_CACHE_KEY, JSON.stringify(cache)); } catch (e) {}
+}
+function recordGenerationTime(numFrames, durationMs) {
+    const cache = loadTimingCache();
+    const key = String(numFrames);
+    if (!cache[key]) cache[key] = [];
+    cache[key].push(durationMs);
+    if (cache[key].length > 10) cache[key] = cache[key].slice(-10);
+    saveTimingCache(cache);
+    updateTimingDisplay();
+}
+function estimateGenerationTime(numFrames) {
+    const cache = loadTimingCache();
+    const samples = cache[String(numFrames)];
+    if (samples && samples.length > 0) {
+        const sorted = [...samples].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 === 0 ? (sorted[mid-1] + sorted[mid]) / 2 : sorted[mid];
+    }
+    return 30000 + numFrames * 500;
+}
+function updateTimingDisplay() {
+    const cache = loadTimingCache();
+    const all = Object.values(cache).flat();
+    const speedEl = document.getElementById('stat-speed');
+    const samplesEl = document.getElementById('stat-samples');
+    if (!speedEl || !samplesEl) return;
+    if (all.length === 0) {
+        speedEl.textContent = 'en attente de données';
+        samplesEl.textContent = '0 génération';
+        return;
+    }
+    const avg = all.reduce((a, b) => a + b, 0) / all.length;
+    speedEl.textContent = (avg / 1000).toFixed(1) + ' s en moyenne';
+    samplesEl.textContent = all.length + ' génération' + (all.length > 1 ? 's' : '');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MODES RENDER
+// ══════════════════════════════════════════════════════════════════
+function getFilteredModes() {
+    let list = MODES;
+    if (state.modeFilter !== 'all') list = list.filter(m => m.cat === state.modeFilter);
+    if (state.modeSearch.trim()) {
+        const q = state.modeSearch.trim().toLowerCase();
+        list = list.filter(m =>
+            m.fr.toLowerCase().includes(q) ||
+            m.kw.toLowerCase().includes(q) ||
+            String(m.n) === q
+        );
+    }
+    return list;
+}
+function renderModeCategories() {
+    const el = document.getElementById('mode-categories');
+    if (!el) return;
+    el.innerHTML = CATEGORIES.map(c =>
+        '<div class="mode-cat ' + (state.modeFilter === c.id ? 'active' : '') + '" data-cat="' + c.id + '">' + c.label + '</div>'
+    ).join('');
+    el.querySelectorAll('[data-cat]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.modeFilter = btn.dataset.cat;
+            renderModeCategories();
+            renderModesList();
+        });
+    });
+}
+function renderModesList() {
+    const el = document.getElementById('modes-list');
+    if (!el) return;
+    const list = getFilteredModes();
+    if (!list.length) {
+        el.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--ink-dim);font-size:0.8rem;">Aucun mode trouvé</div>';
+        return;
+    }
+    el.innerHTML = list.map(m =>
+        '<div class="mode-item ' + (state.selectedMode === m.n ? 'selected' : '') + '" data-n="' + m.n + '">' +
+            '<span class="mode-num">' + m.n + '</span>' +
+            '<span class="mode-label">' + esc(m.fr) + '</span>' +
+            '<span class="mode-cat-tag">' + m.cat + '</span>' +
+        '</div>'
+    ).join('');
+    el.querySelectorAll('[data-n]').forEach(item => {
+        item.addEventListener('click', () => {
+            state.selectedMode = parseInt(item.dataset.n, 10);
+            try { localStorage.setItem(MODE_STORAGE, String(state.selectedMode)); } catch (e) {}
+            renderModesList();
+            updateCurrentMode();
+            updateGenerateBtn();
+        });
+    });
+}
+function updateCurrentMode() {
+    const el = document.getElementById('current-mode');
+    if (!el) return;
+    if (!state.selectedMode) {
+        el.innerHTML = 'Mode sélectionné : <strong>Aucun</strong> — choisissez-en un ci-dessous.';
+        return;
+    }
+    const m = MODES.find(x => x.n === state.selectedMode);
+    if (!m) return;
+    el.innerHTML = 'Mode sélectionné : <strong>N°' + m.n + ' — ' + esc(m.fr) + '</strong>' +
+        '<br><span style="opacity:0.7;font-size:0.72rem;">Catégorie : ' + m.cat + ' · Intensité : ' + m.intensity + '</span>';
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLÉ API
+// ══════════════════════════════════════════════════════════════════
+function getApiKey() {
+    try { return (localStorage.getItem(API_KEY_STORAGE) || '').trim(); }
+    catch (e) { return ''; }
+}
+function saveApiKey() {
+    const input = document.getElementById('api-key-input');
+    if (!input) return;
+    const key = input.value.trim();
+    if (!key) {
+        try { localStorage.removeItem(API_KEY_STORAGE); } catch (e) {}
+        updateApiPanel();
+        showToast('Clé supprimée', 'warn');
+        return;
+    }
+    try {
+        localStorage.setItem(API_KEY_STORAGE, key);
+        updateApiPanel();
+        showToast('Clé API enregistrée ✓', 'success');
+        input.blur();
+    } catch (e) {
+        showToast('Erreur lors de la sauvegarde', 'error');
+    }
+}
+function updateApiPanel() {
+    const panel = document.getElementById('api-panel');
+    const input = document.getElementById('api-key-input');
+    const statusLine = document.getElementById('api-status-line');
+    const statusText = document.getElementById('api-status-text');
+    const key = getApiKey();
+    if (!panel || !input || !statusLine || !statusText) return;
+    if (key) {
+        panel.classList.add('ok');
+        statusLine.classList.add('ok');
+        statusText.textContent = 'Clé API active · ' + key.slice(0, 8) + '…' + key.slice(-4);
+        // ✅ CORRIGÉ — on n'écrit PAS la clé en clair dans le champ
+        input.value = '';
+        input.placeholder = 'Clé enregistrée (' + key.slice(0, 6) + '…) — collez-en une nouvelle pour la remplacer';
+    } else {
+        panel.classList.remove('ok');
+        statusLine.classList.remove('ok');
+        statusText.textContent = 'Aucune clé API enregistrée';
+        input.value = '';
+        input.placeholder = 'Collez votre clé API ici (sk-...)';
+    }
+    updateGenerateBtn();
+}
+function updateGenerateBtn() {
+    const btn = document.getElementById('generate-btn');
+    if (!btn) return;
+    const hasImages = state.images.length > 0;
+    const hasKey = !!getApiKey();
+    btn.disabled = !hasImages || !hasKey || state.isRunning || state.isLoadingImages;
+    if (state.isLoadingImages) {
+        btn.textContent = 'Chargement des images… (' + state.images.length + ')';
+    } else if (state.isRunning) {
+        const total = state.queue.length;
+        const done = state.completed + state.failed;
+        btn.textContent = 'Création en cours… (' + done + '/' + total + ')';
+    } else if (!hasKey) {
+        btn.textContent = 'Ajoutez votre clé API';
+    } else if (!hasImages) {
+        btn.textContent = 'Ajoutez des images';
+    } else if (!state.selectedMode) {
+        btn.textContent = 'Choisissez un mode (1–300)';
+    } else {
+        btn.textContent = 'Créer ' + state.images.length + ' vidéo' + (state.images.length > 1 ? 's' : '') + ' — Mode ' + state.selectedMode;
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UTILITAIRES
+// ══════════════════════════════════════════════════════════════════
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function log(msg) { console.log('[Atelier300] ' + msg); }
+function setStatus(text) {
+    const bar = document.getElementById('status-bar');
+    const txt = document.getElementById('status-text');
+    if (!bar || !txt) return;
+    if (text) { bar.classList.add('visible'); txt.textContent = text; }
+    else bar.classList.remove('visible');
+}
+function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+function formatEta(seconds) {
+    if (seconds < 60) return Math.round(seconds) + 's';
+    const m = Math.floor(seconds / 60);
+    const s = Math.round(seconds % 60);
+    return m + 'm' + (s > 0 ? ' ' + s + 's' : '');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// IMAGES
+// ══════════════════════════════════════════════════════════════════
+function fileToDataUri(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = () => reject(new Error('Erreur lecture'));
+        reader.readAsDataURL(file);
+    });
+}
+function generateThumbnail(dataUri) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ratio = img.height / img.width;
+                canvas.width = THUMBNAIL_MAX_WIDTH;
+                canvas.height = Math.round(THUMBNAIL_MAX_WIDTH * ratio);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            } catch (e) { resolve(dataUri); }
+        };
+        img.onerror = () => resolve(dataUri);
+        img.src = dataUri;
+    });
+}
+async function processOneFile(file) {
+    if (!file.type.startsWith('image/')) return null;
+    if (file.size > MAX_IMAGE_SIZE) { log('Image trop lourde : ' + file.name); return null; }
+    try {
+        const dataUri = await fileToDataUri(file);
+        const thumbnail = await generateThumbnail(dataUri);
+        return { file: file, dataUri: dataUri, thumbnail: thumbnail, id: Date.now() + Math.random() };
+    } catch (e) { log('Erreur ' + file.name + ' : ' + e.message); return null; }
+}
+async function handleFiles(files) {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+    state.isLoadingImages = true;
+    updateGenerateBtn();
+    setStatus('Chargement de ' + imageFiles.length + ' image' + (imageFiles.length > 1 ? 's' : '') + '…');
+    const uploadZone = document.getElementById('upload-zone');
+    uploadZone.classList.add('loading');
+    const BATCH = 5;
+    let processed = 0;
+    for (let i = 0; i < imageFiles.length; i += BATCH) {
+        const batch = imageFiles.slice(i, i + BATCH);
+        const results = await Promise.allSettled(batch.map(f => processOneFile(f)));
+        for (const r of results) {
+            if (r.status === 'fulfilled' && r.value) {
+                state.images.push(r.value);
+                processed++;
+            }
+        }
+        renderImages();
+        setStatus('Chargement… ' + processed + '/' + imageFiles.length);
+    }
+    state.isLoadingImages = false;
+    uploadZone.classList.remove('loading');
+    setStatus(null);
+    updateGenerateBtn();
+}
+function removeImage(id) {
+    state.images = state.images.filter(img => img.id !== id);
+    renderImages();
+    updateGenerateBtn();
+}
+function renderImages() {
+    const grid = document.getElementById('images-grid');
+    grid.innerHTML = state.images.map(img =>
+        '<div class="image-card">' +
+            '<img src="' + (img.thumbnail || img.dataUri) + '" alt="" loading="lazy">' +
+            '<button class="remove-btn" data-remove="' + img.id + '">✕</button>' +
+        '</div>'
+    ).join('');
+    grid.querySelectorAll('[data-remove]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeImage(parseFloat(btn.dataset.remove));
+        });
+    });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD PROMPT
+// ══════════════════════════════════════════════════════════════════
+function buildPrompt() {
+    const m = MODES.find(x => x.n === state.selectedMode);
+    if (!m) return '';
+    const parts = [];
+    parts.push(
+        'Animate this exact image as the starting frame. ' +
+        'The subject must remain IDENTICAL: same face, same expression, same clothing, same pose, same identity. ' +
+        'This is a CONTINUATION of the source image, not a re-imagination. ' +
+        'Preserve the exact composition, framing, and layout.'
+    );
+    parts.push(m.en);
+    const intensityMap = {
+        subtle: 'very subtle movement, barely perceptible change',
+        moderate: 'moderate movement, clear but controlled motion',
+        strong: 'strong dynamic movement, energetic motion, pronounced action'
+    };
+    if (state.intensity !== 'mode' && intensityMap[state.intensity]) {
+        parts.push(intensityMap[state.intensity]);
+    } else {
+        parts.push(intensityMap[m.intensity] || intensityMap.moderate);
+    }
+    if (state.mainPrompt && state.mainPrompt.trim()) {
+        parts.push('Additional direction (highest priority): ' + state.mainPrompt.trim());
+    }
+    parts.push('Portrait orientation 9:16 vertical, 24fps, no text, no subtitles, no watermarks, consistent character design with the source image');
+    return parts.join('. ');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// API
+// ══════════════════════════════════════════════════════════════════
+async function apiFetch(url, options = {}, label = 'API') {
+    for (let attempt = 0; attempt < 7; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        try {
+            const res = await fetch(url, options);
+            if (res.status === 429) {
+                if (createIntervalMs < CREATE_INTERVAL_SAFE) {
+                    createIntervalMs = Math.min(createIntervalMs + 8000, CREATE_INTERVAL_MAX);
+                }
+                const wait = [15, 30, 45, 60, 90, 120, 180][Math.min(attempt, 6)];
+                log(label + ' : 429, attente ' + wait + 's');
+                setStatus('L\'IA se prépare… (' + wait + 's)');
+                await sleep(wait * 1000);
+                continue;
+            }
+            if (res.status === 503) {
+                const wait = [5, 10, 15, 20, 30, 45][Math.min(attempt, 5)];
+                log(label + ' : 503, attente ' + wait + 's');
+                setStatus('Votre vidéo se prépare… (' + wait + 's)');
+                await sleep(wait * 1000);
+                continue;
+            }
+            if (res.ok && createIntervalMs > CREATE_INTERVAL_MIN) {
+                state.creationAttemptsSinceLastError++;
+                if (state.creationAttemptsSinceLastError >= 3) {
+                    createIntervalMs = Math.max(createIntervalMs - 4000, CREATE_INTERVAL_MIN);
+                    state.creationAttemptsSinceLastError = 0;
+                }
+            }
+            return res;
+        } catch (e) {
+            if (e.message === 'Arrêt demandé') throw e;
+            const wait = [3, 5, 8, 12, 20, 30][Math.min(attempt, 5)];
+            log(label + ' : réseau, retry ' + wait + 's');
+            setStatus('Connexion… (' + wait + 's)');
+            await sleep(wait * 1000);
+        }
+    }
+    return fetch(url, options);
+}
+async function createVideoTask(imageDataUri, prompt) {
+    const body = {
+        model: MODEL_VIDEO,
+        prompt: prompt,
+        image: imageDataUri,
+        num_frames: state.durationFrames,
+        frame_rate: FRAME_RATE
+    };
+    const res = await apiFetch(API_BASE + '/videos', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + getApiKey(),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+    }, 'Création');
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error('HTTP ' + res.status + ' — ' + err.slice(0, 200));
+    }
+    const data = await res.json();
+    const videoId = data.video_id || data.id || data.task_id;
+    if (!videoId) throw new Error('Pas de video_id retourné');
+    return videoId;
+}
+async function pollVideo(videoId, onProgress) {
+    const estimatedMs = estimateGenerationTime(state.durationFrames);
+    const estimatedSec = estimatedMs / 1000;
+    let remaining = Math.max(20, Math.floor(estimatedSec * 0.8));
+    while (remaining > 0) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        onProgress('Votre vidéo se prépare… — ' + remaining + 's');
+        await sleep(1000);
+        remaining--;
+    }
+    for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
+        if (state.stopRequested) throw new Error('Arrêt demandé');
+        if (attempt > 0) {
+            let r = POLL_INTERVAL_SEC;
+            while (r > 0) {
+                if (state.stopRequested) throw new Error('Arrêt demandé');
+                onProgress('L\'image prend vie… — ' + r + 's');
+                await sleep(1000);
+                r--;
+            }
+        }
+        const url = POLL_BASE + '?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(MODEL_VIDEO);
+        const res = await apiFetch(url, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + getApiKey() }
+        }, 'Polling');
+        const d = await res.json();
+        const status = d.status || 'unknown';
+        const progress = d.progress || 0;
+        onProgress('Création… — ' + progress + '%');
+        if (status === 'completed' || status === 'succeeded' || status === 'done') {
+            const videoUrl = (d.metadata && d.metadata.url) || d.url || (d.output && d.output.url);
+            if (!videoUrl) throw new Error('Terminé mais pas d\'URL');
+            return videoUrl;
+        }
+        if (status === 'failed' || status === 'error' || status === 'cancelled') {
+            throw new Error('Échec (' + status + ')');
+        }
+    }
+    throw new Error('Délai maximal dépassé');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// QUEUE
+// ══════════════════════════════════════════════════════════════════
+function renderQueue() {
+    const queueEl = document.getElementById('queue');
+    if (!state.queue.length) { queueEl.style.display = 'none'; return; }
+    queueEl.style.display = 'block';
+    const total = state.queue.length;
+    const done = state.completed + state.failed;
+    const inProgress = state.queue.filter(q => q.status === 'processing').length;
+    const pending = total - done - inProgress;
+    const estGen = estimateGenerationTime(state.durationFrames) / 1000;
+    const eta = pending > 0
+        ? (pending * (createIntervalMs / 1000)) + estGen
+        : (inProgress * estGen / Math.max(inProgress, 1));
+    let html = '<div class="queue-summary">' +
+        '<span class="progress-text">Progression : ' + done + '/' + total + '</span>' +
+        '<span class="eta-text">' + (done < total ? '≈ ' + formatEta(eta) + ' restant' : 'Terminé') + '</span>' +
+        '</div>';
+    const visible = state.queue.slice(0, MAX_VISIBLE_QUEUE);
+    const hidden = state.queue.length - visible.length;
+    html += visible.map(item => {
+        let icon = '○', statusText = 'En file d\'attente', cls = 'pending';
+        if (item.status === 'creating') { icon = '◐'; statusText = 'Préparation…'; cls = 'creating'; }
+        else if (item.status === 'processing') { icon = '◐'; statusText = item.progress || 'En cours…'; cls = 'processing'; }
+        else if (item.status === 'done') { icon = '●'; statusText = 'Terminé'; cls = 'done'; }
+        else if (item.status === 'failed') { icon = '✕'; statusText = 'Échec'; cls = 'failed'; }
+        return '<div class="queue-item ' + cls + '">' +
+            '<div class="q-icon">' + icon + '</div>' +
+            '<div class="q-name">Image ' + (item.imageIndex + 1) + '</div>' +
+            '<div class="q-status">' + esc(statusText) + '</div>' +
+        '</div>';
+    }).join('');
+    if (hidden > 0) {
+        html += '<div class="queue-more">… et ' + hidden + ' autre' + (hidden > 1 ? 's' : '') + '</div>';
+    }
+    queueEl.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// GALERIE
+// ══════════════════════════════════════════════════════════════════
+function addToGallery(videoUrl, label) {
+    const galleryEl = document.getElementById('gallery');
+    const galleryGrid = document.getElementById('gallery-grid');
+    galleryEl.style.display = 'block';
+    const el = document.createElement('div');
+    el.className = 'gallery-item';
+    el.innerHTML = '<video controls preload="metadata" muted playsinline>' +
+        '<source src="' + videoUrl + '" type="video/mp4">' +
+        '</video>' +
+        '<div class="g-caption">' + esc(label) + '</div>';
+    galleryGrid.appendChild(el);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PIPELINE
+// ══════════════════════════════════════════════════════════════════
+async function createTaskOnly(item) {
+    item.status = 'creating';
+    item.progress = 'Préparation…';
+    renderQueue();
+    const prompt = buildPrompt();
+    item.prompt = prompt;
+    log('[Image ' + (item.imageIndex + 1) + '] Création…');
+    const videoId = await createVideoTask(item.image.dataUri, prompt);
+    item.videoId = videoId;
+    item.startTime = Date.now();
+    item.status = 'processing';
+    item.progress = 'En cours…';
+    renderQueue();
+    return videoId;
+}
+async function pollTaskAndDisplay(item) {
+    try {
+        const videoUrl = await pollVideo(item.videoId, (prog) => {
+            item.progress = prog;
+            renderQueue();
+        });
+        const elapsed = Date.now() - item.startTime;
+        recordGenerationTime(state.durationFrames, elapsed);
+        log('[Image ' + (item.imageIndex + 1) + '] Terminée en ' + (elapsed / 1000).toFixed(1) + 's');
+        item.status = 'done';
+        item.videoUrl = videoUrl;
+        item.progress = 'Terminé';
+        state.completed++;
+        renderQueue();
+        updateGenerateBtn();
+        addToGallery(videoUrl, 'Image ' + (item.imageIndex + 1) + ' — Mode ' + state.selectedMode);
+    } catch (e) {
+        if (e.message === 'Arrêt demandé') {
+            item.status = 'failed';
+            item.progress = 'Arrêté';
+        } else {
+            log('[Image ' + (item.imageIndex + 1) + '] ' + e.message);
+            item.status = 'failed';
+            item.progress = 'Échec';
+            state.failed++;
+        }
+        renderQueue();
+        updateGenerateBtn();
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// WORKFLOW
+// ══════════════════════════════════════════════════════════════════
+async function startGeneration() {
+    if (state.isRunning || !state.images.length) return;
+    if (!getApiKey()) {
+        showToast('Ajoutez d\'abord votre clé API', 'error');
+        document.getElementById('api-key-input').focus();
+        return;
+    }
+    if (!state.selectedMode) {
+        showToast('Choisissez un mode (1–300)', 'error');
+        return;
+    }
+    state.mainPrompt = document.getElementById('main-prompt').value.trim();
+    state.isRunning = true;
+    state.stopRequested = false;
+    state.completed = 0;
+    state.failed = 0;
+    state.creationAttemptsSinceLastError = 0;
+    createIntervalMs = CREATE_INTERVAL_MIN;
+    state.queue = state.images.map((img, i) => ({
+        imageIndex: i,
+        image: img,
+        status: 'pending',
+        progress: null,
+        videoId: null,
+        videoUrl: null,
+        prompt: null,
+        startTime: null
+    }));
+    document.getElementById('gallery-grid').innerHTML = '';
+    document.getElementById('gallery').style.display = 'none';
+    document.getElementById('stop-btn').classList.add('visible');
+    document.getElementById('generate-btn').disabled = true;
+    renderQueue();
+    updateGenerateBtn();
+    log('Démarrage — Mode ' + state.selectedMode + ' — ' + state.images.length + ' vidéos');
+    const totalStart = Date.now();
+    const pollingTasks = [];
+    try {
+        for (let i = 0; i < state.queue.length; i++) {
+            if (state.stopRequested) break;
+            const item = state.queue[i];
+            try {
+                await createTaskOnly(item);
+                pollingTasks.push(pollTaskAndDisplay(item));
+            } catch (e) {
+                if (e.message === 'Arrêt demandé') break;
+                log('[Image ' + (i + 1) + '] Échec création : ' + e.message);
+                item.status = 'failed';
+                item.progress = 'Échec';
+                state.failed++;
+                renderQueue();
+                updateGenerateBtn();
+            }
+            if (i < state.queue.length - 1 && !state.stopRequested) {
+                const waitSec = Math.ceil(createIntervalMs / 1000);
+                for (let r = waitSec; r > 0; r--) {
+                    if (state.stopRequested) break;
+                    setStatus('Respiration créative… — Image ' + (i + 2) + '/' + state.queue.length + ' dans ' + r + 's');
+                    await sleep(1000);
+                }
+            }
+        }
+        if (pollingTasks.length > 0) {
+            setStatus('Finalisation…');
+            await Promise.allSettled(pollingTasks);
+        }
+    } catch (e) {
+        log('Erreur globale : ' + e.message);
+    }
+    const totalElapsed = (Date.now() - totalStart) / 1000;
+    const summary = state.stopRequested
+        ? 'Arrêté — ' + state.completed + '/' + state.queue.length + ' vidéos'
+        : '✦ ' + state.completed + '/' + state.queue.length + ' vidéos créées en ' + formatEta(totalElapsed) + ' ✦';
+    log(summary);
+    setStatus(summary);
+    await sleep(4000);
+    setStatus(null);
+    state.isRunning = false;
+    state.stopRequested = false;
+    document.getElementById('stop-btn').classList.remove('visible');
+    updateGenerateBtn();
+    showToast(state.completed + ' vidéo' + (state.completed > 1 ? 's' : '') + ' créée' + (state.completed > 1 ? 's' : ''), 'success');
+}
+function stopGeneration() {
+    if (!state.isRunning) return;
+    state.stopRequested = true;
+    log('Arrêt demandé');
+    setStatus('Arrêt en cours…');
+}
+
+// ══════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════
+(function init() {
+    registerServiceWorker();
+
+    // ✅ CORRIGÉ — on restaure le mode AVANT tout
+    try {
+        const saved = localStorage.getItem(MODE_STORAGE);
+        if (saved) state.selectedMode = parseInt(saved, 10);
+    } catch (e) {}
+
+    document.getElementById('api-save-btn')?.addEventListener('click', saveApiKey);
+    document.getElementById('stop-btn')?.addEventListener('click', stopGeneration);
+    document.getElementById('api-key-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveApiKey(); }
+    });
+
+    document.querySelectorAll('[data-toggle]').forEach(header => {
+        header.addEventListener('click', () => {
+            document.getElementById(header.dataset.toggle).classList.toggle('open');
+        });
+    });
+
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    if (uploadZone && fileInput) {
+        uploadZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', e => {
+            handleFiles(e.target.files);
+            fileInput.value = '';
+        });
+    }
+
+    document.getElementById('main-prompt')?.addEventListener('input', e => {
+        state.mainPrompt = e.target.value;
+    });
+
+    document.getElementById('duration-select')?.addEventListener('change', e => {
+        state.durationFrames = parseInt(e.target.value, 10);
+    });
+
+    document.getElementById('intensity-select')?.addEventListener('change', e => {
+        state.intensity = e.target.value;
+    });
+
+    // ✅ CORRIGÉ — garde le focus après recherche
+    document.getElementById('mode-search')?.addEventListener('input', e => {
+        state.modeSearch = e.target.value;
+        const active = document.activeElement;
+        renderModesList();
+        if (active && active.id === 'mode-search') active.focus();
+    });
+
+    document.getElementById('generate-btn')?.addEventListener('click', startGeneration);
+
+    // Rendu initial
+    updateApiPanel();
+    updateTimingDisplay();
+    renderModeCategories();
+    renderModesList();
+    updateCurrentMode();
+    renderImages();
+    renderQueue();
+    updateGenerateBtn();
+
+    // ✅ CORRIGÉ — on force un dernier updateGenerateBtn après tout
+    setTimeout(updateGenerateBtn, 100);
+
+    log('Prêt — 300 modes chargés (PWA, SW désactivé).');
+})();
+</script>
+
+</body>
+</html>
